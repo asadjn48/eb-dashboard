@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd app && npm install && npm run build",
+  "outputDirectory": "app/dist",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- app/",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/app/$1" }
+  ]
+}
