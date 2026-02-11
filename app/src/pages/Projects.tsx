@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import {
-  Search, Filter, MoreHorizontal, TrendingUp,
-  DollarSign, Building2, ArrowUpDown, Plus, Receipt
+  Search, MoreHorizontal, TrendingUp,
+  DollarSign, Building2, Plus, Receipt
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,14 +14,12 @@ import {
 } from '@/components/ui/select';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { projectAPI } from '@/services/projectService';
 import type { Project, ProjectType, ProjectStatus } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
-import { cn } from '@/lib/utils';
 
 const Projects: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +30,7 @@ const Projects: React.FC = () => {
   
   const [typeFilter, setTypeFilter] = useState<ProjectType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  const [sortBy, setSortBy] = useState<'profit' | 'budget' | 'date'>('date');
+  const [sortBy] = useState<'profit' | 'budget' | 'date'>('date');
   
   const [isLoading, setIsLoading] = useState(true);
 
