@@ -1,58 +1,49 @@
-import React, { useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Loader2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile'; // Corrected import
 
 const MainLayout: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const location = useLocation();
+  
+  // State: Default to OPEN on desktop, CLOSED on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-[#5d88c6]" />
-      </div>
-    );
-  }
+  // Close sidebar automatically on mobile route change
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile]);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        />
-      </div>
+    <div className="min-h-screen bg-gray-50/50 flex">
+      
+      {/* Sidebar - Matching SidebarProps interface */}
+      <Sidebar 
+        isCollapsed={!sidebarOpen} 
+        onToggle={toggleSidebar}
+        isMobileOpen={isMobile && sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
 
-      {/* Mobile Sidebar */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <div className="absolute left-0 top-0 h-full">
-            <Sidebar isCollapsed={false} onToggle={() => setIsMobileMenuOpen(false)} />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div
-        className={`transition-all duration-300 ${
-          isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
+      {/* Main Content Area */}
+      <div 
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          sidebarOpen && !isMobile ? 'lg:ml-64' : 'lg:ml-[70px]'
         }`}
       >
-        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
-        <main className="p-4 lg:p-6">
+        
+        {/* Header */}
+        <Header toggleSidebar={toggleSidebar} />
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-6 overflow-x-hidden w-full">
           <Outlet />
         </main>
       </div>

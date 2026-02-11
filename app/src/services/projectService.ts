@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { db } from '../firebase';
 import { 
   collection, 
@@ -8,8 +8,6 @@ import {
   updateDoc, 
   getDoc, 
   deleteDoc,
-  query,
-  where
 } from 'firebase/firestore';
 import type { Project, ProjectFilters } from '../types';
 
