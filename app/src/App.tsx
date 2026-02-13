@@ -16,6 +16,7 @@ import EditEmployee from './pages/team/EditEmployee';
 import EmployeeProfile from './pages/team/EmployeeProfile';
 import Alumni from './pages/Alumni';
 import Notes from '@/pages/Notes';
+import { Toaster } from './components/ui/toaster';
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,6 +106,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
+        <Toaster />
       </BrowserRouter>
     </AuthProvider>
   );

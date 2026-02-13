@@ -1,253 +1,436 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
-import {
-  Search, MoreHorizontal, TrendingUp,
-  DollarSign, Building2, Plus, Receipt
+import { useNavigate } from 'react-router-dom';
+import { 
+  Plus, Search, Pencil, Trash2, Wallet, 
+  ArrowLeft, ArrowRight, X, Briefcase, CheckCircle2, Clock, 
+  TrendingDown, Banknote,
+  Calendar
 } from 'lucide-react';
+
+// Components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+
+// Services & Types
 import { projectAPI } from '@/services/projectService';
-import type { Project, ProjectType, ProjectStatus } from '@/types';
+import type { Project, ProjectStatus } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
+import { cn } from '@/lib/utils';
+
+// Import the Financials Component
+import ProjectFinancials from '@/components/projects/ProjectFinancials';
+
+const ITEMS_PER_PAGE = 20;
 
 const Projects: React.FC = () => {
   const navigate = useNavigate();
-
+  const { toast } = useToast();
+  
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const [typeFilter, setTypeFilter] = useState<ProjectType | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  const [sortBy] = useState<'profit' | 'budget' | 'date'>('date');
-  
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProjectForFinance, setSelectedProjectForFinance] = useState<Project | null>(null);
+  
+  // View Mode: 'active', 'completed', 'all'
+  const [viewMode, setViewMode] = useState<'active' | 'completed' | 'all'>('active');
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
+
+  // Derived Data: Stats
+  const stats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    completed: projects.filter(p => p.status === 'completed').length,
+    onHold: projects.filter(p => p.status === 'on-hold').length,
+    totalBudget: projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0),
+    
+    // NEW CALCULATIONS
+    totalExpenses: projects.reduce((sum, p) => sum + (Number(p.expenses) || 0), 0),
+    totalPending: projects.reduce((sum, p) => {
+       const received = (p as any).receivedAmount || 0;
+       return sum + (p.budget - received);
+    }, 0)
+  };
+
+  // Unique Clients for Filter
+  const clients = Array.from(new Set(projects.map(p => p.clientName || (p as any).client))).filter(Boolean).sort();
 
   useEffect(() => {
     fetchProjects();
-  }, [typeFilter, statusFilter, sortBy]);
+  }, []);
 
   useEffect(() => {
     filterProjects();
-  }, [searchQuery, projects]);
+  }, [searchQuery, clientFilter, dateFilter, viewMode, projects]);
 
   const fetchProjects = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const data = await projectAPI.getAll({
-        type: typeFilter === 'all' ? undefined : typeFilter,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        sortBy,
-      });
+      const data = await projectAPI.getAll();
       setProjects(data);
-      setFilteredProjects(data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterProjects = () => {
-    if (!searchQuery.trim()) {
-      setFilteredProjects(projects);
-      return;
-    }
-    const filtered = projects.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.client.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredProjects(filtered);
+    } catch (e) { console.error(e); }
+    setIsLoading(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-        try {
-            await projectAPI.delete(id);
-            const updated = projects.filter(p => p.id !== id);
-            setProjects(updated);
-            setFilteredProjects(prev => prev.filter(p => p.id !== id));
-        } catch (error) {
-            console.error("Failed to delete project", error);
-        }
-    }
-  }
+    if (!window.confirm("Delete project?")) return;
+    await projectAPI.delete(id);
+    fetchProjects(); 
+    toast({ title: "Deleted", description: "Project removed." });
+  };
 
-  // Stats Calculation
-  const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
-  const totalExpenses = projects.reduce((sum, p) => sum + (p.expenses || 0), 0);
-  const totalProfit = projects.reduce((sum, p) => sum + (p.profit || 0), 0);
-  const activeProjects = projects.filter((p) => p.status === 'active').length;
+  const filterProjects = () => {
+    let filtered = [...projects];
+
+    // 1. View Mode Filter (The "Section" Logic)
+    if (viewMode === 'active') {
+      filtered = filtered.filter(p => p.status === 'active' || p.status === 'on-hold');
+    } else if (viewMode === 'completed') {
+      filtered = filtered.filter(p => p.status === 'completed');
+    }
+    // 'all' shows everything
+
+    // 2. Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        (p.name || '').toLowerCase().includes(q) || 
+        (p.clientName || (p as any).client || '').toLowerCase().includes(q)
+      );
+    }
+
+    // 3. Client Filter
+    if (clientFilter !== 'all') {
+      filtered = filtered.filter(p => (p.clientName === clientFilter || (p as any).client === clientFilter));
+    }
+
+    // 4. Date Filter
+    if (dateFilter.start) {
+      filtered = filtered.filter(p => new Date(p.startDate) >= new Date(dateFilter.start));
+    }
+    if (dateFilter.end) {
+      filtered = filtered.filter(p => new Date(p.startDate) <= new Date(dateFilter.end));
+    }
+
+    setFilteredProjects(filtered);
+    setCurrentPage(1);
+  };
+
+  const paginatedProjects = filteredProjects.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+
+  const getStatusBadge = (status: ProjectStatus) => {
+    const styles = {
+      active: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      completed: "bg-blue-50 text-blue-700 border-blue-100",
+      'on-hold': "bg-amber-50 text-amber-700 border-amber-100",
+    };
+    return (
+      <Badge variant="outline" className={cn("font-medium capitalize px-2 py-0.5", styles[status])}>
+        {status.replace('-', ' ')}
+      </Badge>
+    );
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-500 mt-1">Manage your funded and commercial projects</p>
-        </div>
+      {/* 1. HEADER & KPI CARDS (Now 6 Columns) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4">
         
-        {/* Fixed Button Hover State */}
-        <Button 
-          className="bg-[var(--primary)] text-white hover:opacity-90 hover:bg-[var(--primary)] shadow-md transition-all"
-          onClick={() => navigate('/projects/new')} 
-        >
-          <Plus className="w-4 h-4 mr-2" /> New Project
+        
+        {/* Total Value */}
+        <Card className="p-4 border-l-4 border-l-gray-700 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Value</p>
+              <h3 className="text-xl font-bold text-gray-900 mt-0.5">{formatCurrency(stats.totalBudget)}</h3>
+            </div>
+            <div className="p-1.5 bg-gray-100 rounded-md">
+              <Wallet className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+        </Card>
+
+        {/* NEW: Total Expenses */}
+        <Card className="p-4 border-l-4 border-l-rose-500 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expenses</p>
+              <h3 className="text-xl font-bold text-gray-900 mt-0.5">{formatCurrency(stats.totalExpenses)}</h3>
+            </div>
+            <div className="p-1.5 bg-rose-50 rounded-md">
+              <TrendingDown className="w-4 h-4 text-rose-600" />
+            </div>
+          </div>
+        </Card>
+
+        {/* NEW: Total Pending */}
+        <Card className="p-4 border-l-4 border-l-indigo-500 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Dues</p>
+              <h3 className="text-xl font-bold text-gray-900 mt-0.5">{formatCurrency(stats.totalPending)}</h3>
+            </div>
+            <div className="p-1.5 bg-indigo-50 rounded-md">
+              <Banknote className="w-4 h-4 text-indigo-600" />
+            </div>
+          </div>
+        </Card>
+
+
+      {/* Active */}
+        <Card className="p-4 border-l-4 border-l-emerald-500 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active</p>
+              <h3 className="text-2xl font-bold text-gray-900 mt-0.5">{stats.active}</h3>
+            </div>
+            <div className="p-1.5 bg-emerald-50 rounded-md">
+              <Briefcase className="w-4 h-4 text-emerald-600" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Completed */}
+        <Card className="p-4 border-l-4 border-l-blue-500 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed</p>
+              <h3 className="text-2xl font-bold text-gray-900 mt-0.5">{stats.completed}</h3>
+            </div>
+            <div className="p-1.5 bg-blue-50 rounded-md">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
+        </Card>
+
+        {/* On Hold */}
+        <Card className="p-4 border-l-4 border-l-amber-500 bg-white shadow-sm hover:shadow-md transition-shadow cursor-default">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">On Hold</p>
+              <h3 className="text-2xl font-bold text-gray-900 mt-0.5">{stats.onHold}</h3>
+            </div>
+            <div className="p-1.5 bg-amber-50 rounded-md">
+              <Clock className="w-4 h-4 text-amber-600" />
+            </div>
+          </div>
+        </Card>
+
+
+
+      </div>
+
+      {/* 2. SECTION TABS & ACTIONS */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-1">
+        <div className="flex gap-6 overflow-x-auto pb-2 sm:pb-0">
+          <button 
+            onClick={() => setViewMode('active')}
+            className={cn(
+              "pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+              viewMode === 'active' ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            )}
+          >
+            Active Projects
+          </button>
+          <button 
+            onClick={() => setViewMode('completed')}
+            className={cn(
+              "pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+              viewMode === 'completed' ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            )}
+          >
+            Completed History
+          </button>
+          <button 
+            onClick={() => setViewMode('all')}
+            className={cn(
+              "pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+              viewMode === 'all' ? "border-gray-900 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700"
+            )}
+          >
+            All Projects
+          </button>
+        </div>
+
+        <Button onClick={() => navigate('/projects/new')} className="bg-gray-900 hover:bg-gray-800 text-white h-9 text-xs shadow-sm whitespace-nowrap">
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> New Project
         </Button>
       </div>
 
-      {/* Stats Cards - Added Expenses */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-l-4 border-l-[var(--primary)]">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-[var(--primary)]" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase">Budget</p>
-              <p className="text-lg font-bold text-gray-900">{formatCurrency(totalBudget)}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 3. ADVANCED FILTERS BAR */}
+      <div className="flex flex-col lg:flex-row gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+         <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Input 
+              placeholder="Search projects..." 
+              className="pl-9 h-9 text-sm bg-gray-50/50 border-gray-200"
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+            />
+         </div>
 
-        <Card className="shadow-sm border-l-4 border-l-red-400">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-              <Receipt className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase">Expenses</p>
-              <p className="text-lg font-bold text-gray-900">{formatCurrency(totalExpenses)}</p>
-            </div>
-          </CardContent>
-        </Card>
+         {/* Client Filter */}
+         <div className="w-full lg:w-48">
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="h-9 text-xs bg-gray-50/50 border-gray-200">
+                <SelectValue placeholder="All Clients" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                {clients.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+         </div>
 
-        <Card className="shadow-sm border-l-4 border-l-green-400">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase">Net Profit</p>
-              <p className="text-lg font-bold text-gray-900">{formatCurrency(totalProfit)}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-l-4 border-l-blue-400">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase">Active</p>
-              <p className="text-lg font-bold text-gray-900">{activeProjects}</p>
-            </div>
-          </CardContent>
-        </Card>
+         {/* Date Range */}
+         <div className="flex gap-2 items-center">
+            <Input 
+               type="date" 
+               className="h-9 w-32 text-xs bg-gray-50/50 border-gray-200"
+               value={dateFilter.start}
+               onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+            />
+            <span className="text-gray-300">-</span>
+            <Input 
+               type="date" 
+               className="h-9 w-32 text-xs bg-gray-50/50 border-gray-200"
+               value={dateFilter.end}
+               onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+            />
+            {(dateFilter.start || dateFilter.end) && (
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50" onClick={() => setDateFilter({ start: '', end: '' })}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            )}
+         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
-            <SelectTrigger className="w-[140px] bg-white"><SelectValue placeholder="Type" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="funded">Funded</SelectItem>
-              <SelectItem value="commercial">Commercial</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger className="w-[140px] bg-white"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="on-hold">On Hold</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Projects Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* 4. PROJECTS TABLE */}
+      <Card className="border border-gray-100 shadow-sm overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50/50 border-b border-gray-200">
+          <table className="w-full text-sm text-left">
+            <thead className="text-[11px] font-semibold text-gray-500 uppercase bg-gray-50/40 border-b border-gray-100">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Project</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Client</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Budget</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Profit</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Progress</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 min-w-[200px]">Project Name</th>
+                <th className="px-6 py-3 min-w-[150px]">Client</th>
+                <th className="px-6 py-3 min-w-[180px]">Timeline</th>
+                <th className="px-6 py-3 text-right min-w-[150px]">Financials (Paid / Total)</th>
+                <th className="px-6 py-3 text-center min-w-[100px]">Status</th>
+                <th className="px-6 py-3 text-right min-w-[120px]">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center">Loading...</td></tr>
-              ) : filteredProjects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900">{project.name}</p>
-                    <p className="text-xs text-gray-500">{project.type} • {project.subType}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{project.client}</td>
-                  <td className="px-6 py-4 text-right font-medium">{formatCurrency(project.budget)}</td>
-                  <td className="px-6 py-4 text-right font-medium text-green-600">{formatCurrency(project.profit)}</td>
-                  <td className="px-6 py-4">
-                    <div className="w-24 mx-auto">
-                      <div className="flex justify-between text-[10px] mb-1"><span>{project.progress}%</span></div>
-                      <Progress value={project.progress} className="h-1.5" />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <Badge variant="outline" className="capitalize font-normal bg-white">
-                      {project.status.replace('-', ' ')}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4 text-gray-500" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/projects/edit/${project.id}`)}>Edit Project</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(project.id)}>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">Loading...</td></tr>
+              ) : paginatedProjects.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">No projects found in this view.</td></tr>
+              ) : (
+                paginatedProjects.map((project) => {
+                  const received = (project as any).receivedAmount || 0;
+                  const remaining = project.budget - received;
+                  const displayClient = project.clientName || (project as any).client || 'No Client';
+                  const finalEndDate = project.completionDate || (project as any).endDate;
+                  
+                  // Date Display Logic
+                  const endDateDisplay = finalEndDate ? new Date(finalEndDate).toLocaleDateString() : (project.status === 'completed' ? 'Completed' : 'Ongoing');
+
+                  return (
+                    <tr key={project.id} className="bg-white hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-900">{project.name}</td>
+                      <td className="px-6 py-4 text-gray-600">{displayClient}</td>
+                      <td className="px-6 py-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 opacity-50"/> {new Date(project.startDate).toLocaleDateString()}</div>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-gray-400"><Clock className="w-3 h-3 opacity-50"/> {endDateDisplay}</div>
+                      </td>
+                      
+                      <td className="px-6 py-4 text-right">
+                        <div className="font-medium text-gray-900">{formatCurrency(project.budget)}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">
+                           <span className="text-emerald-600 font-medium">{formatCurrency(received)}</span> paid
+                        </div>
+                        {remaining > 0 && (
+                          <div className="text-[10px] text-rose-500 font-medium">
+                            {formatCurrency(remaining)} due
+                          </div>
+                        )}
+                      </td>
+                      
+                      <td className="px-6 py-4 text-center">{getStatusBadge(project.status)}</td>
+                      
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50" onClick={() => setSelectedProjectForFinance(project)}>
+                            <Wallet className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50" onClick={() => navigate(`/projects/edit/${project.id}`)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(project.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+               })
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+
+        {/* Pagination Controls */}
+        {filteredProjects.length > ITEMS_PER_PAGE && (
+           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+             <span className="text-xs text-gray-500">
+               Page {currentPage} of {totalPages}
+             </span>
+             <div className="flex gap-2">
+               <Button 
+                 variant="outline" size="sm" 
+                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                 disabled={currentPage === 1}
+                 className="h-8 text-xs"
+               >
+                 <ArrowLeft className="w-3 h-3 mr-1" /> Prev
+               </Button>
+               <Button 
+                 variant="outline" size="sm" 
+                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                 disabled={currentPage === totalPages}
+                 className="h-8 text-xs"
+               >
+                 Next <ArrowRight className="w-3 h-3 ml-1" />
+               </Button>
+             </div>
+           </div>
+        )}
+      </Card>
+
+      {/* Financials Modal */}
+      {selectedProjectForFinance && (
+        <ProjectFinancials 
+          project={selectedProjectForFinance} 
+          isOpen={!!selectedProjectForFinance} 
+          onClose={() => setSelectedProjectForFinance(null)}
+          onUpdate={fetchProjects}
+        />
+      )}
     </div>
   );
 };

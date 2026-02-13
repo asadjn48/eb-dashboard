@@ -1,3 +1,5 @@
+
+
 // // ==========================================
 // // 1. AUTH & USER
 // // ==========================================
@@ -24,7 +26,7 @@
 //   netProfit: number;
 //   activeProjects: number;
 //   teamSize: number;
-//   alumniSize: number; // Added for Dashboard
+//   alumniSize: number;
 //   projectExpenses: number;
 //   taxExpenses: number;
 //   salaryExpenses: number;
@@ -53,7 +55,7 @@
 //   id: string;
 //   name: string;
 //   type: ProjectType;
-//   subType: string; // Flexible string for custom types
+//   subType: string;
 //   client: string;
 //   budget: number;
 //   expenses: number;
@@ -75,22 +77,26 @@
 // // ==========================================
 // // 4. TEAM & EMPLOYEES
 // // ==========================================
+// // ADDED THESE BACK TO FIX BUILD ERRORS
+// export type Department = 'Graphic Designer' | 'Web Developer' | 'App Developer' | 'Instructor' | 'AI Engineer' | 'Management' | 'Other';
+// export type EmployeeType = 'on-site' | 'remote' | 'hybrid' | 'alumni';
+
 // export interface Employee {
 //   id: string;
 //   name: string;
 //   email: string;
 //   phone?: string;
 //   designation: string;
-//   department: string;
-//   type: 'on-site' | 'remote' | 'hybrid'; 
-//   status: 'active' | 'inactive' | 'terminated'; // Unified Status
-//   joinDate: string; // ISO Date
+//   department: string; // Keeping as string to allow flexibility, or use Department
+//   type: EmployeeType; 
+//   status: 'active' | 'inactive' | 'terminated';
+//   joinDate: string;
 //   salary: number;
 //   avatar?: string;
 
-//   // Exit Details (For Alumni)
+//   // Exit Details
 //   exitDate?: string;
-//   exitType?: string;   // e.g. Resigned, Terminated
+//   exitType?: string;
 //   exitReason?: string;
 // }
 
@@ -111,8 +117,8 @@
 //   | 'Food' 
 //   | 'Maintenance' 
 //   | 'Guest' 
-//   | 'Salaries'   // Critical for Dashboard
-//   | 'Tax'        // Critical for Dashboard
+//   | 'Salaries'
+//   | 'Tax'
 //   | 'Equipment'
 //   | 'Software'
 //   | 'Other';
@@ -144,7 +150,18 @@
 // }
 
 // // ==========================================
-// // 6. UTILITIES (Notes & Settings)
+// // 6. INCOME & BUDGET
+// // ==========================================
+// export interface Income {
+//   id: string;
+//   source: string;
+//   amount: number;
+//   date: string;
+//   description?: string;
+// }
+
+// // ==========================================
+// // 7. UTILITIES
 // // ==========================================
 // export type NoteCategory = 'Work' | 'Personal' | 'Ideas' | 'Urgent' | 'To-Do';
 
@@ -174,27 +191,144 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // // ==========================================
-// // 7. INCOME & BUDGET
+// // 1. AUTH & USER
 // // ==========================================
-// export interface Income {
+// export interface User {
 //   id: string;
-//   source: string; // e.g. "Project Advance", "Investor Funding", "Personal Injection"
-//   amount: number;
-//   date: string;
-//   description?: string;
+//   email: string;
+//   name: string;
+//   role: 'admin' | 'manager' | 'executive'; // Updated per PDF
+//   avatar?: string;
 // }
 
+// // ==========================================
+// // 2. DASHBOARD & ANALYTICS
+// // ==========================================
+// // Matches the 6 cards in the Image/PDF
+// export interface KPIData {
+//   totalIncome: number;
+//   netProfit: number;
+//   totalExpenses: number;
+//   activeProjects: number;
+//   teamSize: number;
+//   projectMargin: number; // New: % value
+  
+//   // New Checklist items
+//   alumniCount: number;
+//   taxPaid: number;
+// }
 
+// // ==========================================
+// // 3. FINANCIALS (Profit, Debt, Security)
+// // ==========================================
+// // New: For the "Net Profit" module requirements
+// export interface FinancialRecord {
+//   id: string;
+//   type: 'debt' | 'investment' | 'loan' | 'security';
+//   amount: number;
+//   description: string;
+//   date: string;
+//   status: 'active' | 'repaid' | 'refunded'; // For Security/Debt tracking
+//   refundDate?: string;
+// }
 
+// export interface ProfitDistribution {
+//   bankAmount: number;
+//   cashInHand: number;
+//   totalDebt: number;
+//   totalInvestments: number;
+//   securityDeposits: number;
+// }
 
+// // ==========================================
+// // 4. PROJECTS
+// // ==========================================
+// export type ProjectStatus = 'active' | 'completed' | 'on-hold';
 
+// export interface Project {
+//   id: string;
+//   name: string;
+//   clientName: string;
+//   description?: string;
+//   status: ProjectStatus;
+  
+//   // Financials
+//   budget: number; // Total Value
+//   receivedAmount: number;
+//   pendingAmount: number;
+//   expenses: number;
+//   margin: number; // Calculated Profit Margin
+  
+//   startDate: string;
+//   completionDate?: string;
+//   progress: number; // 0-100
+// }
 
+// // ==========================================
+// // 5. TEAM, ALUMNI & PAYROLL
+// // ==========================================
+// export type Department = 'Design' | 'Development' | 'Marketing' | 'Management';
 
+// export interface TeamMember {
+//   id: string;
+//   name: string;
+//   role: string;
+//   email: string;
+//   phone: string;
+//   status: 'active' | 'alumni'; // Combined Team/Alumni logic
+//   joinDate: string;
+//   leaveDate?: string; // For Alumni
+//   salary: number;
+  
+//   // Performance (0-100 or 1-5 scale)
+//   performanceRating: number;
+//   reputationScore: number;
+// }
 
+// export interface PayrollRecord {
+//   id: string;
+//   employeeId: string;
+//   employeeName: string;
+//   month: string; // "2023-10"
+//   baseSalary: number;
+//   bonuses: number;
+//   deductions: number;
+//   netSalary: number; // Calculated
+//   status: 'paid' | 'unpaid';
+//   paymentDate?: string;
+// }
 
-
-
+// // ==========================================
+// // 6. GLOBAL SETTINGS
+// // ==========================================
+// export interface CompanySettings {
+//   name: string;
+//   logo?: string;
+//   address?: string;
+//   currency: string;
+//   // Removed "primaryColor" as we are enforcing the Soft Palette
+// }
 
 
 
@@ -220,14 +354,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'manager' | 'employee';
+  role: 'admin' | 'manager' | 'executive';
   avatar?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
 }
 
 // ==========================================
@@ -235,16 +363,20 @@ export interface AuthState {
 // ==========================================
 export interface KPIData {
   totalIncome: number;
-  totalExpenses: number;
   netProfit: number;
+  totalExpenses: number;
   activeProjects: number;
-  teamSize: number;
-  alumniSize: number;
+  teamSize: number;      // Active Employees only
+  alumniCount: number;   // Alumni only
+  projectMargin: number; 
+  taxPaid: number;
+  salaryExpenses: number; // Fixed: Added this property
   projectExpenses: number;
-  taxExpenses: number;
-  salaryExpenses: number;
 }
 
+
+
+// Fixed: Explicitly exporting these for Charts
 export interface ChartDataPoint {
   name: string;
   value: number;
@@ -259,91 +391,154 @@ export interface MonthlyFinancialData {
 }
 
 // ==========================================
-// 3. PROJECTS
+// 3. FINANCIALS
 // ==========================================
-export type ProjectType = 'funded' | 'commercial';
-export type ProjectStatus = 'active' | 'completed' | 'on-hold' | 'cancelled';
+export interface FinancialRecord {
+  id: string;
+  type: 'debt' | 'investment' | 'loan' | 'security';
+  amount: number;
+  description: string;
+  date: string;
+  status: 'active' | 'repaid' | 'refunded';
+  refundDate?: string;
+}
+
+export interface ProfitDistribution {
+  bankAmount: number;
+  cashInHand: number;
+  totalDebt: number;
+  totalInvestments: number;
+  securityDeposits: number;
+}
+
+// ==========================================
+// 4. PROJECTS
+// ==========================================
+// export type ProjectStatus = 'active' | 'completed' | 'on-hold';
+
+// export interface Project {
+//   id: string;
+//   name: string;
+//   clientName: string;
+//   description?: string;
+//   status: ProjectStatus;
+//   budget: number;
+//   expenses: number;
+//   profit?: number; // Optional as it's calculated
+//   startDate: string;
+//   completionDate?: string;
+//   progress: number;
+// }
+
+
+
+// export interface ProjectTransaction {
+//   id: string;
+//   projectId: string;
+//   amount: number;
+//   date: string;
+//   type: 'payment' | 'refund' | 'adjustment';
+//   method?: 'cash' | 'bank' | 'cheque' | 'online';
+//   notes?: string;
+//   recordedBy?: string;
+// }
+
+
+
+
+
+
+
+
+
+
+// ==========================================
+// EXISTING TYPES (Keep your User, etc.)
+// ==========================================
+
+// ... (your existing User interface, etc.)
+
+// ==========================================
+// PROJECT RELATED TYPES (Update/Add these)
+// ==========================================
+
+export type ProjectStatus = 'active' | 'completed' | 'on-hold';
 
 export interface Project {
   id: string;
   name: string;
-  type: ProjectType;
-  subType: string;
-  client: string;
-  budget: number;
-  expenses: number;
-  profit: number;
-  startDate: string;
-  endDate: string;
-  status: ProjectStatus;
-  progress: number;
+  // Support both naming conventions just in case
+  clientName: string; 
+  client?: string; 
+  
   description?: string;
+  status: ProjectStatus;
+  
+  // Financials
+  budget: number;
+  receivedAmount?: number; // Total collected so far
+  expenses?: number;
+  profit?: number; // Calculated profit
+  
+  // Dates
+  startDate: string;
+  completionDate?: string;
+  endDate?: string; // Fallback date field
 }
 
+// --- FIX: Add this Interface ---
 export interface ProjectFilters {
-  type?: ProjectType;
   status?: ProjectStatus;
+  type?: string;
   search?: string;
-  sortBy?: 'profit' | 'budget' | 'date';
 }
 
+// --- FIX: Add this Interface for the Wallet Feature ---
+export interface ProjectTransaction {
+  id: string;
+  projectId: string;
+  amount: number;
+  date: string;
+  type: 'payment' | 'refund' | 'adjustment';
+  method?: 'cash' | 'bank' | 'cheque' | 'online';
+  notes?: string;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ==========================================
-// 4. TEAM & EMPLOYEES
+// 5. TEAM & PAYROLL
 // ==========================================
-// ADDED THESE BACK TO FIX BUILD ERRORS
-export type Department = 'Graphic Designer' | 'Web Developer' | 'App Developer' | 'Instructor' | 'AI Engineer' | 'Management' | 'Other';
+export type Department = 'Design' | 'Development' | 'Marketing' | 'Management' | 'Other';
 export type EmployeeType = 'on-site' | 'remote' | 'hybrid' | 'alumni';
 
 export interface Employee {
+  // exitDate: boolean;
   id: string;
   name: string;
   email: string;
   phone?: string;
   designation: string;
-  department: string; // Keeping as string to allow flexibility, or use Department
-  type: EmployeeType; 
+  department: string;
+  type: EmployeeType;
   status: 'active' | 'inactive' | 'terminated';
   joinDate: string;
   salary: number;
   avatar?: string;
 
-  // Exit Details
-  exitDate?: string;
+  exitDate?: string; 
   exitType?: string;
   exitReason?: string;
-}
-
-export interface TeamFilters {
-  department?: string;
-  type?: string;
-  status?: string;
-  search?: string;
-}
-
-// ==========================================
-// 5. FINANCE (Expenses & Payroll)
-// ==========================================
-export type ExpenseCategory = 
-  | 'Rent' 
-  | 'WiFi' 
-  | 'Electricity' 
-  | 'Food' 
-  | 'Maintenance' 
-  | 'Guest' 
-  | 'Salaries'
-  | 'Tax'
-  | 'Equipment'
-  | 'Software'
-  | 'Other';
-
-export interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  category: ExpenseCategory;
-  date: string;
-  status: 'paid' | 'pending';
-  isRecurring?: boolean;
 }
 
 export interface PayrollRecord {
@@ -352,7 +547,6 @@ export interface PayrollRecord {
   employeeName: string;
   department: string;
   month: string;
-  year: number;
   baseSalary: number;
   bonuses: number;
   deductions: number;
@@ -363,37 +557,18 @@ export interface PayrollRecord {
 }
 
 // ==========================================
-// 6. INCOME & BUDGET
+// 6. INCOME & SETTINGS
 // ==========================================
 export interface Income {
   id: string;
   source: string;
   amount: number;
   date: string;
-  description?: string;
-}
-
-// ==========================================
-// 7. UTILITIES
-// ==========================================
-export type NoteCategory = 'Work' | 'Personal' | 'Ideas' | 'Urgent' | 'To-Do';
-
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  category: NoteCategory;
-  date: string;
-  isPinned?: boolean;
 }
 
 export interface CompanySettings {
   name: string;
   logo?: string;
-  address: string;
-  phone: string;
-  email: string;
-  primaryColor: string;
-  currency?: string;
-  taxPercentage?: number;
+  address?: string;
+  currency: string;
 }
