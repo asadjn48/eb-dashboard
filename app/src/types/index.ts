@@ -110,28 +110,28 @@
 // // ==========================================
 // // 5. FINANCE (Expenses & Payroll)
 // // ==========================================
-// export type ExpenseCategory = 
-//   | 'Rent' 
-//   | 'WiFi' 
-//   | 'Electricity' 
-//   | 'Food' 
-//   | 'Maintenance' 
-//   | 'Guest' 
-//   | 'Salaries'
-//   | 'Tax'
-//   | 'Equipment'
-//   | 'Software'
-//   | 'Other';
+export type ExpenseCategory = 
+  | 'Rent' 
+  | 'WiFi' 
+  | 'Electricity' 
+  | 'Food' 
+  | 'Maintenance' 
+  | 'Guest' 
+  | 'Salaries'
+  | 'Tax'
+  | 'Equipment'
+  | 'Software'
+  | 'Other';
 
-// export interface Expense {
-//   id: string;
-//   description: string;
-//   amount: number;
-//   category: ExpenseCategory;
-//   date: string;
-//   status: 'paid' | 'pending';
-//   isRecurring?: boolean;
-// }
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;
+  status: 'paid' | 'pending';
+  isRecurring?: boolean;
+}
 
 // export interface PayrollRecord {
 //   id: string;
@@ -163,16 +163,16 @@
 // // ==========================================
 // // 7. UTILITIES
 // // ==========================================
-// export type NoteCategory = 'Work' | 'Personal' | 'Ideas' | 'Urgent' | 'To-Do';
+export type NoteCategory = 'Work' | 'Personal' | 'Ideas' | 'Urgent' | 'To-Do';
 
-// export interface Note {
-//   id: string;
-//   title: string;
-//   content: string;
-//   category: NoteCategory;
-//   date: string;
-//   isPinned?: boolean;
-// }
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  category: NoteCategory;
+  date: string;
+  isPinned?: boolean;
+}
 
 // export interface CompanySettings {
 //   name: string;
@@ -519,11 +519,80 @@ export interface ProjectTransaction {
 // ==========================================
 // 5. TEAM & PAYROLL
 // ==========================================
-export type Department = 'Design' | 'Development' | 'Marketing' | 'Management' | 'Other';
+// export type Department = 'Design' | 'Development' | 'Marketing' | 'Management' | 'Other';
+// export type EmployeeType = 'on-site' | 'remote' | 'hybrid' | 'alumni';
+
+// export interface Employee {
+//   [x: string]: string;
+//   [x: string]: string;
+//   // exitDate: boolean;
+//   id: string;
+//   name: string;
+//   email: string;
+//   phone?: string;
+//   designation: string;
+//   department: string;
+//   type: EmployeeType;
+//   status: 'active' | 'inactive' | 'terminated';
+//   joinDate: string;
+//   salary: number;
+//   avatar?: string;
+
+//   exitDate?: string; 
+//   exitType?: string;
+//   exitReason?: string;
+// }
+
+
+
+
+
+
+// src/types/index.ts
+
+// export type EmployeeType = 'on-site' | 'remote' | 'hybrid' | 'alumni';
+// export type EmployeeStatus = 'active' | 'inactive' | 'terminated';
+
+// export interface Employee {
+//   id: string;
+//   name: string;
+//   email: string;
+//   phone?: string;
+//   designation: string;
+//   department: string;
+//   type: EmployeeType;
+//   status: EmployeeStatus;
+  
+//   // Financials
+//   salary: number; // This MUST be number
+  
+//   // Dates
+//   joinDate: string;
+  
+//   // Assets
+//   avatar?: string;
+
+//   // NEW FIELDS (Add these to fix the errors)
+//   bankName?: string;
+//   accountNumber?: string;
+//   currentAddress?: string;
+//   homeAddress?: string;
+
+//   // Exit Info
+//   exitDate?: string;
+//   exitType?: string;
+//   exitReason?: string;
+// }
+
+
+
+
+// src/types/index.ts
+
 export type EmployeeType = 'on-site' | 'remote' | 'hybrid' | 'alumni';
+export type EmployeeStatus = 'active' | 'inactive' | 'terminated';
 
 export interface Employee {
-  // exitDate: boolean;
   id: string;
   name: string;
   email: string;
@@ -531,12 +600,23 @@ export interface Employee {
   designation: string;
   department: string;
   type: EmployeeType;
-  status: 'active' | 'inactive' | 'terminated';
+  status: EmployeeStatus;
+  
+  // Financials
+  salary: number; 
+  salaryStartDate?: string; // NEW: To handle custom cycles (e.g., 16th of month)
+  
   joinDate: string;
-  salary: number;
   avatar?: string;
+  
+  // Bank & Address
+  bankName?: string;
+  accountNumber?: string;
+  currentAddress?: string;
+  homeAddress?: string;
 
-  exitDate?: string; 
+  // Exit Info
+  exitDate?: string;
   exitType?: string;
   exitReason?: string;
 }
@@ -546,15 +626,56 @@ export interface PayrollRecord {
   employeeId: string;
   employeeName: string;
   department: string;
-  month: string;
+  designation?: string; 
+  mobile?: string;
+  
+  // Financials
   baseSalary: number;
   bonuses: number;
   deductions: number;
   tax: number;
   netSalary: number;
-  status: 'paid' | 'unpaid';
-  paidDate?: string;
+  
+  // Meta
+  status: 'paid' | 'pending';
+  month: string; 
+  paidDate: string;
+  
+  // FIXED: Added 'reimbursement' to allowable types
+  method: 'bank' | 'cash' | 'cheque' | 'transfer' | 'reimbursement'; 
+  notes?: string;
 }
+
+
+
+
+
+// export interface PayrollRecord {
+//   id: string;
+//   employeeId: string;
+//   employeeName: string;
+//   department: string;
+//   designation?: string; 
+//   mobile?: string;      
+//   month: string;
+//   baseSalary: number;
+//   bonuses: number;
+//   deductions: number;
+//   tax: number;
+//   netSalary: number;
+//   // status: 'paid' | 'unpaid';
+//   // paidDate?: string;
+//   //  method: 'bank' | 'cash' | 'cheque' | 'transfer'; 
+//   notes?: string;
+// }
+
+
+
+
+
+
+
+
 
 // ==========================================
 // 6. INCOME & SETTINGS

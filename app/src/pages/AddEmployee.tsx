@@ -1,439 +1,259 @@
-// import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { ArrowLeft, Save, Mail, Phone, User, Briefcase, DollarSign, Calendar } from 'lucide-react';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '@/components/ui/select';
-
-// const departments = [
-//   'Graphic Designer',
-//   'Web Developer',
-//   'App Developer',
-//   'Instructor',
-//   'AI Engineer',
-// ];
-
-// const AddEmployee: React.FC = () => {
-//   const navigate = useNavigate();
-//   const [isLoading, setIsLoading] = useState(false);
-
-//   // Form State
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     email: '',
-//     phone: '',
-//     designation: '',
-//     department: '',
-//     type: 'on-site',
-//     status: 'active',
-//     salary: '',
-//     joinDate: ''
-//   });
-
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setIsLoading(true);
-
-//     // Simulate API call
-//     setTimeout(() => {
-//       console.log('Employee Added:', formData);
-//       setIsLoading(false);
-//       navigate('/team'); // Redirect back to team list
-//     }, 1000);
-//   };
-
-//   return (
-//     <div className="max-w-4xl mx-auto space-y-6">
-      
-//       {/* Header */}
-//       <div className="flex items-center gap-4 mb-6">
-//         <Button 
-//           variant="ghost" 
-//           size="sm" 
-//           onClick={() => navigate('/team')}
-//           className="text-gray-500 hover:text-gray-900"
-//         >
-//           <ArrowLeft className="w-4 h-4 mr-2" />
-//           Back to Team
-//         </Button>
-//         <h1 className="text-2xl font-bold text-gray-900">Add New Employee</h1>
-//       </div>
-
-//       <Card>
-//         <CardHeader>
-//           <CardTitle>Employee Details</CardTitle>
-//           <p className="text-sm text-gray-500">Enter personal and professional information.</p>
-//         </CardHeader>
-//         <CardContent>
-//           <form onSubmit={handleSubmit} className="space-y-6">
-            
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-//               {/* Full Name */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Full Name</label>
-//                 <div className="relative">
-//                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     className="pl-10"
-//                     placeholder="e.g. Asad Ullah" 
-//                     required
-//                     value={formData.name}
-//                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Email */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Email Address</label>
-//                 <div className="relative">
-//                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     type="email"
-//                     className="pl-10"
-//                     placeholder="name@company.com" 
-//                     required 
-//                     value={formData.email}
-//                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Designation */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Designation / Role</label>
-//                 <div className="relative">
-//                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     className="pl-10"
-//                     placeholder="e.g. Senior React Developer" 
-//                     required 
-//                     value={formData.designation}
-//                     onChange={(e) => setFormData({...formData, designation: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Department */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Department</label>
-//                 <Select 
-//                   value={formData.department} 
-//                   onValueChange={(val) => setFormData({...formData, department: val})}
-//                 >
-//                   <SelectTrigger>
-//                     <SelectValue placeholder="Select Department" />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     {departments.map((dept) => (
-//                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-//                     ))}
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               {/* Work Type */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Work Type</label>
-//                 <Select 
-//                   value={formData.type} 
-//                   onValueChange={(val) => setFormData({...formData, type: val})}
-//                 >
-//                   <SelectTrigger>
-//                     <SelectValue placeholder="Select Type" />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     <SelectItem value="on-site">On-site</SelectItem>
-//                     <SelectItem value="remote">Remote</SelectItem>
-//                     <SelectItem value="alumni">Alumni</SelectItem>
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               {/* Status */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Status</label>
-//                 <Select 
-//                   value={formData.status} 
-//                   onValueChange={(val) => setFormData({...formData, status: val})}
-//                 >
-//                   <SelectTrigger>
-//                     <SelectValue placeholder="Select Status" />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     <SelectItem value="active">Active</SelectItem>
-//                     <SelectItem value="inactive">Inactive</SelectItem>
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               {/* Salary */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Salary</label>
-//                 <div className="relative">
-//                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     type="number" 
-//                     className="pl-10" 
-//                     placeholder="0.00" 
-//                     required 
-//                     value={formData.salary}
-//                     onChange={(e) => setFormData({...formData, salary: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Join Date */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Joining Date</label>
-//                 <div className="relative">
-//                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     type="date"
-//                     className="pl-10"
-//                     value={formData.joinDate}
-//                     onChange={(e) => setFormData({...formData, joinDate: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Phone (Optional) */}
-//               <div className="space-y-2">
-//                 <label className="text-sm font-medium text-gray-700">Phone Number (Optional)</label>
-//                 <div className="relative">
-//                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//                   <Input 
-//                     type="tel"
-//                     className="pl-10"
-//                     placeholder="+92..." 
-//                     value={formData.phone}
-//                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
-//                   />
-//                 </div>
-//               </div>
-
-//             </div>
-
-//             <div className="flex justify-end gap-4 pt-4 border-t">
-//               <Button 
-//                 type="button" 
-//                 variant="outline" 
-//                 onClick={() => navigate('/team')}
-//               >
-//                 Cancel
-//               </Button>
-//               <Button 
-//                 type="submit" 
-//                 className="bg-[#5d88c6] hover:bg-[#4a6fa5]"
-//                 disabled={isLoading}
-//               >
-//                 {isLoading ? (
-//                   'Saving...'
-//                 ) : (
-//                   <>
-//                     <Save className="w-4 h-4 mr-2" />
-//                     Save Employee
-//                   </>
-//                 )}
-//               </Button>
-//             </div>
-
-//           </form>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default AddEmployee;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Mail, Phone, User, Briefcase, DollarSign, Calendar } from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  ChevronLeft, Save, Trash2, Eye, 
+  User, Briefcase, CreditCard, MapPin, Home 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { teamAPI } from '@/services/teamService';
-import type { Department, EmployeeType } from '@/types';
+import type { Employee } from '@/types';
 
-const departments: Department[] = [
-  'Graphic Designer', 'Web Developer', 'App Developer', 'Instructor', 'AI Engineer',
-];
+// Static Departments
+const staticDepartments = ['Graphic Designer', 'Web Developer', 'App Developer', 'Instructor', 'AI Engineer', 'HR', 'Marketing'];
 
-const AddEmployee: React.FC = () => {
+const EditEmployee = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const { id } = useParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  
+  // Custom Department State
+  const [isCustomDept, setIsCustomDept] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    designation: '',
-    department: '' as Department,
-    type: 'on-site' as EmployeeType,
-    status: 'active' as 'active' | 'inactive',
-    salary: '',
-    joinDate: new Date().toISOString().split('T')[0],
-    avatar: '' // Optional avatar URL
-  });
+  // Fetch Data
+  useEffect(() => {
+    const fetchEmp = async () => {
+      if (!id) return;
+      try {
+        const data = await teamAPI.getById(id);
+        if (data) {
+          setEmployee(data);
+          // Check if dept is custom
+          if (data.department && !staticDepartments.includes(data.department)) {
+             setIsCustomDept(true);
+          }
+        } else {
+          alert("Employee not found");
+          navigate('/team');
+        }
+      } catch (e) { console.error(e); }
+      finally { setIsLoading(false); }
+    };
+    fetchEmp();
+  }, [id, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const handleSave = async () => {
+    if (!employee || !id) return;
+    setIsSaving(true);
     try {
-      await teamAPI.add({
-        ...formData,
-        salary: Number(formData.salary),
-        // Add a default avatar if none provided
-        avatar: formData.avatar || `https://ui-avatars.com/api/?name=${formData.name}&background=random`
-      });
+      await teamAPI.update(id, employee);
       navigate('/team');
     } catch (error) {
-      console.error("Failed to add employee", error);
-      alert("Failed to save employee. Check console.");
+      console.error("Update failed", error);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
+  const handleDeactivate = async () => {
+    if (!employee || !id) return;
+    if (confirm("Are you sure you want to deactivate this employee? They will be moved to archives.")) {
+        await teamAPI.update(id, { status: 'inactive', exitDate: new Date().toISOString() });
+        navigate('/team');
+    }
+  }
+
+  const handleDeptChange = (val: string) => {
+    if (!employee) return;
+    if (val === 'other') {
+      setIsCustomDept(true);
+      setEmployee({ ...employee, department: '' });
+    } else {
+      setIsCustomDept(false);
+      setEmployee({ ...employee, department: val });
+    }
+  };
+
+  if (isLoading) return <div className="p-10 text-center">Loading details...</div>;
+  if (!employee) return null;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/team')}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
-        </Button>
-        <h1 className="text-2xl font-bold text-gray-900">Add New Employee</h1>
+    <div className="max-w-5xl mx-auto space-y-6 pb-20 animate-in fade-in duration-500">
+      
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div className="flex items-center gap-3">
+            <Button variant="outline" size="icon" onClick={() => navigate('/team')} className="h-9 w-9 rounded-full">
+                <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div>
+                <h1 className="text-xl font-bold text-gray-900">Edit Employee</h1>
+                <p className="text-sm text-gray-500">Update profile information.</p>
+            </div>
+        </div>
+        <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate(`/team/profile/${id}`)}>
+                <Eye className="w-4 h-4 mr-2" /> View Profile
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleDeactivate}>
+                <Trash2 className="w-4 h-4 mr-2"/> Deactivate
+            </Button>
+            <Button className="bg-slate-900 text-white" size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+            </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Employee Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input className="pl-9" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Asad Ullah" />
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN: Main Info */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Personal Info */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-gray-100">
+               <CardTitle className="text-base font-semibold flex items-center gap-2">
+                 <User className="w-4 h-4 text-slate-500" /> Personal Information
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2 space-y-1.5">
+                  <Label className="text-xs">Full Name</Label>
+                  <Input value={employee.name} onChange={e => setEmployee({...employee, name: e.target.value})} className="bg-slate-50/50" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input type="email" className="pl-9" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="email@company.com" />
-                </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Email</Label>
+                  <Input value={employee.email} onChange={e => setEmployee({...employee, email: e.target.value})} className="bg-slate-50/50" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Designation</label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input className="pl-9" required value={formData.designation} onChange={(e) => setFormData({...formData, designation: e.target.value})} placeholder="e.g. Senior Dev" />
-                </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Phone</Label>
+                  <Input value={employee.phone || ''} onChange={e => setEmployee({...employee, phone: e.target.value})} className="bg-slate-50/50" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Department</label>
-                <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val as Department})}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            </CardContent>
+          </Card>
+          
+          {/* Professional Details */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-gray-100">
+               <CardTitle className="text-base font-semibold flex items-center gap-2">
+                 <Briefcase className="w-4 h-4 text-slate-500" /> Professional Details
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Designation</Label>
+                  <Input value={employee.designation} onChange={e => setEmployee({...employee, designation: e.target.value})} className="bg-slate-50/50" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Work Type</label>
-                <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val as EmployeeType})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="on-site">On-site</SelectItem>
-                    <SelectItem value="remote">Remote</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Department</Label>
+                  {!isCustomDept ? (
+                    <Select value={staticDepartments.includes(employee.department) ? employee.department : 'other'} onValueChange={handleDeptChange}>
+                      <SelectTrigger className="bg-slate-50/50"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {staticDepartments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                        <SelectItem value="other" className="text-blue-600 font-medium">Other (Custom)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input value={employee.department} onChange={e => setEmployee({...employee, department: e.target.value})} className="bg-blue-50 border-blue-200" placeholder="Type department..." />
+                      <Button variant="ghost" size="icon" onClick={() => setIsCustomDept(false)}><ChevronLeft className="w-4 h-4" /></Button>
+                    </div>
+                  )}
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Salary (PKR)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input type="number" className="pl-9" required value={formData.salary} onChange={(e) => setFormData({...formData, salary: e.target.value})} placeholder="0.00" />
-                </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Salary (PKR)</Label>
+                  <Input type="number" value={employee.salary} onChange={e => setEmployee({...employee, salary: Number(e.target.value)})} className="bg-slate-50/50" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Joining Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input type="date" className="pl-9" required value={formData.joinDate} onChange={(e) => setFormData({...formData, joinDate: e.target.value})} />
-                </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Joining Date</Label>
+                  <Input type="date" value={employee.joinDate} onChange={e => setEmployee({...employee, joinDate: e.target.value})} className="bg-slate-50/50" />
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Phone (Optional)</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input className="pl-9" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+92..." />
-                </div>
+          {/* Address Details */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-gray-100">
+               <CardTitle className="text-base font-semibold flex items-center gap-2">
+                 <MapPin className="w-4 h-4 text-slate-500" /> Address Details
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1"><Home className="w-3 h-3"/> Current Address</Label>
+                  <Input value={employee.currentAddress || ''} onChange={e => setEmployee({...employee, currentAddress: e.target.value})} className="bg-slate-50/50" />
               </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Permanent Address</Label>
+                  <Input value={employee.homeAddress || ''} onChange={e => setEmployee({...employee, homeAddress: e.target.value})} className="bg-slate-50/50" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            </div>
+        {/* RIGHT COLUMN: Status & Bank */}
+        <div className="space-y-6">
+          
+          {/* Status Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b border-gray-100">
+               <CardTitle className="text-base font-semibold">Status & Type</CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Current Status</Label>
+                  <Select value={employee.status} onValueChange={(v: any) => setEmployee({...employee, status: v})}>
+                      <SelectTrigger className="bg-slate-50/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                  </Select>
+              </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs">Work Type</Label>
+                  <Select value={employee.type} onValueChange={(v: any) => setEmployee({...employee, type: v})}>
+                      <SelectTrigger className="bg-slate-50/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="on-site">On-Site</SelectItem>
+                          <SelectItem value="remote">Remote</SelectItem>
+                          <SelectItem value="alumni">Alumni</SelectItem>
+                      </SelectContent>
+                  </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex justify-end gap-4 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => navigate('/team')}>Cancel</Button>
-              <Button type="submit" className="bg-slate-900" disabled={isLoading}>
-                {isLoading ? 'Saving...' : <><Save className="w-4 h-4 mr-2" /> Save Employee</>}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          {/* Bank Info */}
+          <Card className="border-blue-100 bg-blue-50/30">
+            <CardHeader className="pb-3 border-b border-blue-100">
+               <CardTitle className="text-base font-semibold flex items-center gap-2 text-blue-900">
+                 <CreditCard className="w-4 h-4" /> Bank Information
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                  <Label className="text-xs text-blue-900/70">Bank Name</Label>
+                  <Input value={employee.bankName || ''} onChange={e => setEmployee({...employee, bankName: e.target.value})} className="bg-white border-blue-200" />
+              </div>
+              <div className="space-y-1.5">
+                  <Label className="text-xs text-blue-900/70">Account Number</Label>
+                  <Input value={employee.accountNumber || ''} onChange={e => setEmployee({...employee, accountNumber: e.target.value})} className="bg-white border-blue-200 font-mono" />
+              </div>
+            </CardContent>
+          </Card>
+
+        </div>
+      </div>
     </div>
   );
 };
 
-export default AddEmployee;
+export default EditEmployee;

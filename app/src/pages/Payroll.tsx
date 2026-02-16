@@ -1,339 +1,318 @@
-// import React, { useEffect, useState } from 'react';
-// import {
-//   Search,
-//   Filter,
-//   Download,
-//   CheckCircle2,
-//   XCircle,
-//   Calendar,
-//   Users,
-//   Wallet,
-// } from 'lucide-react';
+
+
+
+
+
+// import React, { useEffect, useState, useMemo } from 'react';
+// import { Search, Download, Calendar, History, FileText, Filter, RefreshCw, Pencil } from 'lucide-react';
 // import { Button } from '@/components/ui/button';
 // import { Input } from '@/components/ui/input';
 // import { Badge } from '@/components/ui/badge';
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '@/components/ui/select';
-// import { Card, CardContent } from '@/components/ui/card';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Card } from '@/components/ui/card';
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+// import { Label } from '@/components/ui/label';
 
+// import { teamAPI } from '@/services/teamService';
+// import { payrollAPI } from '@/services/payrollService';
+// import { formatCurrency, getInitials } from '@/utils/formatters';
+// import { cn } from '@/lib/utils';
 
-// import { teamAPI } from '@/services/teamService'; 
-
-
-// // Remove this line:
-// // import { api } from '@/services/api';
-
-// // Add this line:
-// // import { teamAPI } from '@/services/teamService'; 
-
-// // ... inside the component, replace api.getEmployees() with:
-// // await teamAPI.getAll();
-
-
-
-
-// import type { PayrollRecord, Department } from '@/types';
-// import { formatCurrency } from '@/utils/formatters';
-// import { DepartmentDistributionChart } from '@/components/dashboard/Charts';
-// import type { ChartDataPoint } from '@/types';
+// // Components
+// import { PayrollStats } from '@/components/payroll/PayrollStats';
+// import { PaymentModal } from '@/components/payroll/PaymentModal';
+// import { PayslipModal } from '@/components/payroll/PayslipModal';
+// import { EmployeeLedger } from '@/components/payroll/EmployeeLedger';
+// import type { Employee, PayrollRecord } from '@/types';
 
 // const Payroll: React.FC = () => {
-//   const [payroll, setPayroll] = useState<PayrollRecord[]>([]);
-//   const [filteredPayroll, setFilteredPayroll] = useState<PayrollRecord[]>([]);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [statusFilter, setStatusFilter] = useState<'paid' | 'unpaid' | 'all'>('all');
-//   const [deptFilter, setDeptFilter] = useState<Department | 'all'>('all');
-//   const [summary, setSummary] = useState({ totalPaid: 0, totalUnpaid: 0, totalAmount: 0 });
-//   const [deptDistribution, setDeptDistribution] = useState<ChartDataPoint[]>([]);
+//   const [employees, setEmployees] = useState<Employee[]>([]);
+//   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
 //   const [isLoading, setIsLoading] = useState(true);
+  
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'partial'>('all');
+//   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
 
-//   useEffect(() => {
-//     fetchData();
-//   }, []);
+//   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+//   const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null);
+  
+//   const [currentDueAmount, setCurrentDueAmount] = useState(0);
 
-//   useEffect(() => {
-//     filterPayroll();
-//   }, [searchQuery, statusFilter, deptFilter, payroll]);
+//   const [modals, setModals] = useState({ 
+//     pay: false, 
+//     history: false, 
+//     payslip: false,
+//     editCycle: false 
+//   });
 
-//   const fetchData = async () => {
+//   const [cycleForm, setCycleForm] = useState({ salary: 0, startDate: '' });
+
+//   // --- 1. Load Data ---
+//   const loadData = async () => {
+//     setIsLoading(true);
 //     try {
-//       setIsLoading(true);
-//       const [payrollData, summaryData, deptDist] = await Promise.all([
-//         payrollAPI.getAll(),
-//         payrollAPI.getSummary(),
-//         teamAPI.getDepartmentDistribution(),
+//       const [teamData, payrollData] = await Promise.all([
+//         teamAPI.getAll(),
+//         payrollAPI.getAll()
 //       ]);
-//       setPayroll(payrollData);
-//       setFilteredPayroll(payrollData);
-//       setSummary(summaryData);
-//       setDeptDistribution(deptDist);
-//     } catch (error) {
-//       console.error('Error fetching payroll data:', error);
-//     } finally {
-//       setIsLoading(false);
-//     }
+//       setEmployees(teamData.filter(e => e.status === 'active'));
+//       setPayrollRecords(payrollData);
+//     } catch (error) { console.error("Error:", error); }
+//     finally { setIsLoading(false); }
 //   };
 
-//   const filterPayroll = () => {
-//     let filtered = [...payroll];
+//   useEffect(() => { loadData(); }, []);
 
-//     if (searchQuery.trim()) {
-//       filtered = filtered.filter(
-//         (p) =>
-//           p.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//           p.department.toLowerCase().includes(searchQuery.toLowerCase())
-//       );
-//     }
+//   // --- 2. Data Processing ---
+//   const processedList = useMemo(() => {
+//     return employees.map(emp => {
+//       // Find all records for this employee for the selected month
+//       const empRecords = payrollRecords.filter(p => p.employeeId === emp.id && p.month === selectedMonth);
+      
+//       // Calculate Totals
+//       const totalPaid = empRecords
+//         .filter(r => r.method !== 'reimbursement')
+//         .reduce((sum, r) => sum + r.netSalary, 0);
+      
+//       const totalReimbursements = empRecords
+//         .filter(r => r.method === 'reimbursement')
+//         .reduce((sum, r) => sum + r.netSalary, 0);
 
-//     if (statusFilter !== 'all') {
-//       filtered = filtered.filter((p) => p.status === statusFilter);
-//     }
+//       const totalDue = emp.salary + totalReimbursements;
+//       const remaining = totalDue - totalPaid;
 
-//     if (deptFilter !== 'all') {
-//       filtered = filtered.filter((p) => p.department === deptFilter);
-//     }
+//       // Status
+//       let status: 'paid' | 'pending' | 'partial' = 'pending';
+//       if (remaining <= 0) status = 'paid';
+//       else if (totalPaid > 0) status = 'partial';
 
-//     setFilteredPayroll(filtered);
+//       // Cycle Check
+//       const today = new Date();
+//       const cycleDay = emp.salaryStartDate ? new Date(emp.salaryStartDate).getDate() : 1;
+//       const isCycleComplete = today.getDate() >= cycleDay; 
+
+//       // Find the main "Salary" record to show in the UI (if exists)
+//       const mainRecord = empRecords.find(r => r.method !== 'reimbursement') || empRecords[0] || null;
+
+//       return {
+//         ...emp,
+//         payrollStatus: status,
+//         totalDue,
+//         totalPaid,
+//         remaining: Math.max(0, remaining),
+//         lastPaidDate: mainRecord?.paidDate || null,
+//         isCycleComplete,
+//         record: mainRecord // IMPORTANT: Passed so Payslip Modal works
+//       };
+//     }).filter(item => {
+//       const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+//       const matchStatus = statusFilter === 'all' || item.payrollStatus === statusFilter;
+//       return matchSearch && matchStatus;
+//     });
+//   }, [employees, payrollRecords, selectedMonth, searchQuery, statusFilter]);
+
+//   // Stats Logic
+//   const stats = useMemo(() => {
+//     const totalDue = processedList.reduce((sum, p) => sum + p.totalDue, 0);
+//     const totalPaid = processedList.reduce((sum, p) => sum + p.totalPaid, 0);
+//     const paidCount = processedList.filter(p => p.payrollStatus === 'paid').length;
+//     return {
+//       total: totalDue,
+//       paid: totalPaid,
+//       paidCount,
+//       pending: totalDue - totalPaid,
+//       pendingCount: processedList.length - paidCount,
+//       count: processedList.length
+//     };
+//   }, [processedList]);
+
+//   // --- 3. Handlers ---
+  
+//   const handlePayClick = (employee: any) => {
+//     setSelectedEmployee(employee);
+//     setCurrentDueAmount(employee.remaining);
+//     setModals({ ...modals, pay: true });
 //   };
 
-//   const getStatusBadge = (status: 'paid' | 'unpaid') => {
-//     return status === 'paid' ? (
-//       <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-//         <CheckCircle2 className="w-3 h-3 mr-1" />
-//         Paid
-//       </Badge>
-//     ) : (
-//       <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-//         <XCircle className="w-3 h-3 mr-1" />
-//         Unpaid
-//       </Badge>
-//     );
+//   const handlePayment = async (data: any) => {
+//     if (!selectedEmployee) return;
+    
+//     const newRecord: PayrollRecord = {
+//       id: "temp",
+//       employeeId: selectedEmployee.id,
+//       employeeName: selectedEmployee.name,
+//       department: selectedEmployee.department,
+//       mobile: selectedEmployee.phone,
+//       baseSalary: selectedEmployee.salary,
+//       bonuses: data.bonus,
+//       deductions: data.deduction,
+//       tax: data.tax,
+//       netSalary: data.netSalary,
+//       status: 'paid',
+//       month: selectedMonth, 
+//       paidDate: data.date,
+//       method: data.type === 'reimbursement' ? 'reimbursement' : data.method,
+//       notes: data.notes
+//     };
+
+//     const saved = await payrollAPI.add(newRecord);
+//     setPayrollRecords(prev => [saved, ...prev]);
+//     setModals(prev => ({ ...prev, pay: false }));
 //   };
 
-//   const departments: Department[] = [
-//     'Graphic Designer',
-//     'Web Developer',
-//     'App Developer',
-//     'Instructor',
-//     'AI Engineer',
-//   ];
+//   const handleUpdateCycle = async () => {
+//     if (!selectedEmployee) return;
+//     try {
+//       await teamAPI.update(selectedEmployee.id, { 
+//         salary: cycleForm.salary,
+//         salaryStartDate: cycleForm.startDate 
+//       });
+//       setEmployees(prev => prev.map(e => e.id === selectedEmployee.id ? { ...e, salary: cycleForm.salary, salaryStartDate: cycleForm.startDate } : e));
+//       setModals(prev => ({ ...prev, editCycle: false }));
+//     } catch(e) { console.error(e); }
+//   };
+
+//   const handleDeleteRecord = async (id: string) => {
+//     await payrollAPI.delete(id);
+//     setPayrollRecords(prev => prev.filter(r => r.id !== id));
+//   };
 
 //   return (
-//     <div className="space-y-6">
-//       {/* Page Header */}
-//       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+//     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+      
+//       {/* Header */}
+//       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
 //         <div>
 //           <h1 className="text-2xl font-bold text-gray-900">Payroll Management</h1>
-//           <p className="text-gray-500 mt-1">Manage employee salaries and payments</p>
+//           <p className="text-sm text-gray-500 mt-1">
+//             Managing <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{selectedMonth}</span>
+//           </p>
 //         </div>
 //         <div className="flex gap-2">
-//           <Button variant="outline">
-//             <Download className="w-4 h-4 mr-2" />
-//             Export
-//           </Button>
-//           <Button className="bg-[#5d88c6] hover:bg-[#4a6fa5]">
-//             Process Payroll
-//           </Button>
+//           <Button variant="outline" size="sm" onClick={loadData}><RefreshCw className="w-4 h-4" /></Button>
+//           <Button variant="outline" className="bg-white"><Download className="w-4 h-4 mr-2" /> Export</Button>
 //         </div>
 //       </div>
 
-//       {/* Summary Cards */}
-//       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-//         <Card>
-//           <CardContent className="p-4 flex items-center gap-4">
-//             <div className="w-12 h-12 rounded-xl bg-[#5d88c6]/10 flex items-center justify-center">
-//               <Wallet className="w-6 h-6 text-[#5d88c6]" />
-//             </div>
-//             <div>
-//               <p className="text-sm text-gray-500">Total Payroll</p>
-//               <p className="text-xl font-bold text-gray-900">
-//                 {formatCurrency(summary.totalAmount)}
-//               </p>
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4 flex items-center gap-4">
-//             <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-//               <CheckCircle2 className="w-6 h-6 text-green-600" />
-//             </div>
-//             <div>
-//               <p className="text-sm text-gray-500">Paid</p>
-//               <p className="text-xl font-bold text-green-600">
-//                 {formatCurrency(summary.totalPaid)}
-//               </p>
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4 flex items-center gap-4">
-//             <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-//               <XCircle className="w-6 h-6 text-yellow-600" />
-//             </div>
-//             <div>
-//               <p className="text-sm text-gray-500">Pending</p>
-//               <p className="text-xl font-bold text-yellow-600">
-//                 {formatCurrency(summary.totalUnpaid)}
-//               </p>
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4 flex items-center gap-4">
-//             <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-//               <Users className="w-6 h-6 text-blue-600" />
-//             </div>
-//             <div>
-//               <p className="text-sm text-gray-500">Employees</p>
-//               <p className="text-xl font-bold text-gray-900">{payroll.length}</p>
-//             </div>
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Charts */}
-//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//         <DepartmentDistributionChart data={deptDistribution} />
-//         <Card>
-//           <CardContent className="p-6">
-//             <h3 className="text-lg font-semibold mb-4">Payroll Summary</h3>
-//             <div className="space-y-4">
-//               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-//                 <span className="text-gray-600">Total Base Salaries</span>
-//                 <span className="font-semibold">
-//                   {formatCurrency(payroll.reduce((sum, p) => sum + p.baseSalary, 0))}
-//                 </span>
-//               </div>
-//               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-//                 <span className="text-gray-600">Total Bonuses</span>
-//                 <span className="font-semibold text-green-600">
-//                   {formatCurrency(payroll.reduce((sum, p) => sum + p.bonuses, 0))}
-//                 </span>
-//               </div>
-//               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-//                 <span className="text-gray-600">Total Deductions</span>
-//                 <span className="font-semibold text-red-600">
-//                   {formatCurrency(payroll.reduce((sum, p) => sum + p.deductions + p.tax, 0))}
-//                 </span>
-//               </div>
-//               <div className="flex justify-between items-center p-3 bg-[#5d88c6]/10 rounded-lg">
-//                 <span className="font-medium text-gray-900">Net Payroll</span>
-//                 <span className="font-bold text-[#5d88c6]">
-//                   {formatCurrency(payroll.reduce((sum, p) => sum + p.netSalary, 0))}
-//                 </span>
-//               </div>
-//             </div>
-//           </CardContent>
-//         </Card>
-//       </div>
+//       <PayrollStats stats={stats} />
 
 //       {/* Filters */}
-//       <div className="flex flex-col lg:flex-row gap-4">
+//       <div className="flex flex-col sm:flex-row gap-3 bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm">
 //         <div className="relative flex-1">
 //           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-//           <Input
-//             placeholder="Search employees..."
-//             value={searchQuery}
-//             onChange={(e) => setSearchQuery(e.target.value)}
-//             className="pl-10"
-//           />
+//           <Input placeholder="Search employee..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 border-0 bg-transparent focus-visible:ring-0" />
 //         </div>
-//         <div className="flex flex-wrap gap-2">
-//           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'paid' | 'unpaid' | 'all')}>
-//             <SelectTrigger className="w-[140px]">
-//               <Filter className="w-4 h-4 mr-2" />
-//               <SelectValue placeholder="Status" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               <SelectItem value="all">All Status</SelectItem>
-//               <SelectItem value="paid">Paid</SelectItem>
-//               <SelectItem value="unpaid">Unpaid</SelectItem>
-//             </SelectContent>
-//           </Select>
-
-//           <Select value={deptFilter} onValueChange={(v) => setDeptFilter(v as Department | 'all')}>
-//             <SelectTrigger className="w-[160px]">
-//               <SelectValue placeholder="Department" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               <SelectItem value="all">All Departments</SelectItem>
-//               {departments.map((dept) => (
-//                 <SelectItem key={dept} value={dept}>
-//                   {dept}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
+//         <div className="h-8 w-px bg-gray-200 hidden sm:block self-center" />
+//         <div className="relative">
+//            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+//            <Input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="pl-9 w-[150px] h-9 border-0 bg-slate-50 text-xs font-medium" />
 //         </div>
+//         <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+//           <SelectTrigger className="w-[130px] border-0 bg-transparent h-9 text-xs">
+//              <div className="flex items-center text-gray-600"><Filter className="w-3.5 h-3.5 mr-2" /> <SelectValue /></div>
+//           </SelectTrigger>
+//           <SelectContent>
+//             <SelectItem value="all">All Status</SelectItem>
+//             <SelectItem value="paid">Paid</SelectItem>
+//             <SelectItem value="pending">Pending</SelectItem>
+//           </SelectContent>
+//         </Select>
 //       </div>
 
-//       {/* Payroll Table */}
-//       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+//       {/* Table */}
+//       <Card className="border-gray-200 shadow-sm overflow-hidden bg-white">
 //         <div className="overflow-x-auto">
-//           <table className="w-full">
-//             <thead className="bg-gray-50 border-b border-gray-200">
+//           <table className="w-full text-sm text-left">
+//             <thead className="bg-slate-50/50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold">
 //               <tr>
-//                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Employee</th>
-//                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Department</th>
-//                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Base Salary</th>
-//                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Bonuses</th>
-//                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Deductions</th>
-//                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Tax</th>
-//                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Net Salary</th>
-//                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Status</th>
-//                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Paid Date</th>
+//                 <th className="px-6 py-4">Employee</th>
+//                 <th className="px-6 py-4 hidden md:table-cell">Contact</th>
+//                 <th className="px-6 py-4 text-right">Paid / Due</th>
+//                 <th className="px-6 py-4 text-center">Status</th>
+//                 <th className="px-6 py-4 text-center hidden sm:table-cell">Cycle</th>
+//                 <th className="px-4 py-4 text-right">Actions</th>
 //               </tr>
 //             </thead>
-//             <tbody className="divide-y divide-gray-200">
+//             <tbody className="divide-y divide-gray-50">
 //               {isLoading ? (
-//                 <tr>
-//                   <td colSpan={9} className="px-4 py-8 text-center">
-//                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5d88c6] mx-auto"></div>
-//                   </td>
-//                 </tr>
-//               ) : filteredPayroll.length === 0 ? (
-//                 <tr>
-//                   <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-//                     No payroll records found
-//                   </td>
-//                 </tr>
+//                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">Loading payroll...</td></tr>
+//               ) : processedList.length === 0 ? (
+//                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">No records found.</td></tr>
 //               ) : (
-//                 filteredPayroll.map((record) => (
-//                   <tr key={record.id} className="hover:bg-gray-50">
-//                     <td className="px-4 py-3">
-//                       <p className="font-medium text-gray-900">{record.employeeName}</p>
+//                 processedList.map((item) => (
+//                   <tr key={item.id} className="group hover:bg-slate-50/60 transition-colors">
+//                     <td className="px-6 py-4">
+//                       <div className="flex items-center gap-3">
+//                         <Avatar className="h-9 w-9 border border-gray-100">
+//                           <AvatarImage src={item.avatar} />
+//                           <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-xs">{getInitials(item.name)}</AvatarFallback>
+//                         </Avatar>
+//                         <div>
+//                           <div className="font-medium text-gray-900">{item.name}</div>
+//                           <div className="text-[11px] text-gray-500">{item.designation}</div>
+//                         </div>
+//                       </div>
 //                     </td>
-//                     <td className="px-4 py-3 text-sm text-gray-600">{record.department}</td>
-//                     <td className="px-4 py-3 text-right font-medium text-gray-900">
-//                       {formatCurrency(record.baseSalary)}
+//                     <td className="px-6 py-4 hidden md:table-cell text-xs text-gray-500">
+//                        <div>{item.phone || 'N/A'}</div>
+//                        <div className="opacity-75">{item.department}</div>
 //                     </td>
-//                     <td className="px-4 py-3 text-right text-green-600">
-//                       +{formatCurrency(record.bonuses)}
+//                     <td className="px-6 py-4 text-right">
+//                       <div className="font-mono font-medium text-gray-900">{formatCurrency(item.totalPaid)}</div>
+//                       <div className="text-[10px] text-gray-400">of {formatCurrency(item.totalDue)}</div>
 //                     </td>
-//                     <td className="px-4 py-3 text-right text-red-600">
-//                       -{formatCurrency(record.deductions)}
+//                     <td className="px-6 py-4 text-center">
+//                       <Badge variant="secondary" className={cn("capitalize px-2.5 py-0.5", 
+//                         item.payrollStatus === 'paid' ? "bg-emerald-100 text-emerald-700" : 
+//                         item.payrollStatus === 'partial' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+//                       )}>
+//                         {item.payrollStatus}
+//                       </Badge>
 //                     </td>
-//                     <td className="px-4 py-3 text-right text-red-600">
-//                       -{formatCurrency(record.tax)}
+//                     <td className="px-6 py-4 text-center text-xs text-gray-500 hidden sm:table-cell">
+//                        Starts: {item.salaryStartDate ? new Date(item.salaryStartDate).getDate() : '1st'}
 //                     </td>
-//                     <td className="px-4 py-3 text-right font-bold text-gray-900">
-//                       {formatCurrency(record.netSalary)}
-//                     </td>
-//                     <td className="px-4 py-3 text-center">{getStatusBadge(record.status)}</td>
-//                     <td className="px-4 py-3 text-center text-sm text-gray-500">
-//                       {record.paidDate ? (
-//                         <span className="flex items-center justify-center gap-1">
-//                           <Calendar className="w-3 h-3" />
-//                           {record.paidDate}
-//                         </span>
-//                       ) : (
-//                         '-'
-//                       )}
+//                     <td className="px-4 py-4 text-right">
+//                       <div className="flex items-center justify-end gap-1">
+                        
+//                         <Button 
+//                           size="icon" variant="ghost" 
+//                           className="h-8 w-8 text-gray-400 hover:text-slate-700"
+//                           onClick={() => { setSelectedEmployee(item); setCycleForm({ salary: item.salary, startDate: item.salaryStartDate || '' }); setModals({ ...modals, editCycle: true }); }}
+//                         >
+//                            <Pencil className="w-3.5 h-3.5" />
+//                         </Button>
+
+//                         {/* Pay Button / Payslip Button */}
+//                         {item.payrollStatus !== 'paid' ? (
+//                           <Button 
+//                             size="sm" 
+//                             className={cn("h-8 text-xs shadow-sm", item.isCycleComplete ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-slate-600 text-white")}
+//                             onClick={() => handlePayClick(item)}
+//                           >
+//                             Pay Now
+//                           </Button>
+//                         ) : (
+//                           <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 bg-blue-50 hover:bg-blue-100" 
+//                             onClick={() => {
+//                                // SAFE CHECK: Ensure record exists before opening
+//                                if(item.record) {
+//                                  setSelectedRecord(item.record); 
+//                                  setModals({ ...modals, payslip: true });
+//                                } else {
+//                                  alert("No receipt found for this payment.");
+//                                }
+//                             }}>
+//                              <FileText className="w-4 h-4" />
+//                           </Button>
+//                         )}
+                        
+//                         <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-gray-600" onClick={() => { setSelectedEmployee(item); setModals({ ...modals, history: true }); }}>
+//                            <History className="w-4 h-4" />
+//                         </Button>
+//                       </div>
 //                     </td>
 //                   </tr>
 //                 ))
@@ -341,7 +320,50 @@
 //             </tbody>
 //           </table>
 //         </div>
-//       </div>
+//       </Card>
+
+//       <PaymentModal 
+//         isOpen={modals.pay} 
+//         onClose={() => setModals(prev => ({ ...prev, pay: false }))} 
+//         employee={selectedEmployee}
+//         currentBalance={currentDueAmount}
+//         onConfirm={handlePayment}
+//       />
+
+//       <EmployeeLedger
+//         isOpen={modals.history}
+//         onClose={() => setModals(prev => ({ ...prev, history: false }))}
+//         employee={selectedEmployee}
+//         records={payrollRecords.filter(p => p.employeeId === selectedEmployee?.id)}
+//         onDelete={handleDeleteRecord}
+//       />
+
+//       <PayslipModal
+//         isOpen={modals.payslip}
+//         onClose={() => setModals(prev => ({ ...prev, payslip: false }))}
+//         record={selectedRecord}
+//       />
+
+//       <Dialog open={modals.editCycle} onOpenChange={(v) => setModals(prev => ({ ...prev, editCycle: v }))}>
+//          <DialogContent className="sm:max-w-sm">
+//             <DialogHeader><DialogTitle>Edit Salary Details</DialogTitle></DialogHeader>
+//             <div className="space-y-4 py-2">
+//                <div className="space-y-1.5">
+//                   <Label>Base Salary</Label>
+//                   <Input type="number" value={cycleForm.salary} onChange={e => setCycleForm({...cycleForm, salary: Number(e.target.value)})} />
+//                </div>
+//                <div className="space-y-1.5">
+//                   <Label>Cycle Start Date</Label>
+//                   <Input type="date" value={cycleForm.startDate} onChange={e => setCycleForm({...cycleForm, startDate: e.target.value})} />
+//                </div>
+//             </div>
+//             <DialogFooter>
+//                <Button variant="outline" onClick={() => setModals(prev => ({ ...prev, editCycle: false }))}>Cancel</Button>
+//                <Button onClick={handleUpdateCycle} className="bg-slate-900 text-white">Save Changes</Button>
+//             </DialogFooter>
+//          </DialogContent>
+//       </Dialog>
+
 //     </div>
 //   );
 // };
@@ -368,336 +390,223 @@
 
 
 
-
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
-import {
-  Search,
-  Filter,
-  Download,
-  CheckCircle2,
-  XCircle,
-  Calendar,
-  Users,
-  Wallet,
-} from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search, Download, Calendar, History, FileText, RefreshCw, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
-// Services
-import { teamAPI } from '@/services/teamService'; 
-import { payrollAPI } from '@/services/payrollService'; // Added this
+import { teamAPI } from '@/services/teamService';
+import { payrollAPI } from '@/services/payrollService';
+import { formatCurrency, getInitials } from '@/utils/formatters';
+import { cn } from '@/lib/utils';
 
-import type { PayrollRecord } from '@/types'; // Ensure Department is in types if needed, or string
-import { formatCurrency } from '@/utils/formatters';
-import { DepartmentDistributionChart } from '@/components/dashboard/Charts';
-import type { ChartDataPoint } from '@/types';
-
-// Define Department locally if not exported, or import from types if available
-type Department = 'Graphic Designer' | 'Web Developer' | 'App Developer' | 'Instructor' | 'AI Engineer' | 'Management' | 'Other';
+import { PayrollStats } from '@/components/payroll/PayrollStats';
+import { PaymentModal } from '@/components/payroll/PaymentModal';
+import { PayslipModal } from '@/components/payroll/PayslipModal';
+import { EmployeeLedger } from '@/components/payroll/EmployeeLedger';
+import type { Employee, PayrollRecord } from '@/types';
 
 const Payroll: React.FC = () => {
-  const [payroll, setPayroll] = useState<PayrollRecord[]>([]);
-  const [filteredPayroll, setFilteredPayroll] = useState<PayrollRecord[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'paid' | 'unpaid' | 'all'>('all');
-  const [deptFilter, setDeptFilter] = useState<Department | 'all'>('all');
-  const [summary, setSummary] = useState({ totalPaid: 0, totalUnpaid: 0, totalAmount: 0 });
-  const [deptDistribution, setDeptDistribution] = useState<ChartDataPoint[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'partial'>('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null);
+  const [currentDueAmount, setCurrentDueAmount] = useState(0);
 
-  // Fixed Dependency Array
-  useEffect(() => {
-    filterPayroll();
-  }, [searchQuery, statusFilter, deptFilter, payroll]);
+  const [modals, setModals] = useState({ pay: false, history: false, payslip: false, editCycle: false });
+  const [cycleForm, setCycleForm] = useState({ salary: 0, startDate: '' });
 
-  const fetchData = async () => {
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const [payrollData, summaryData, deptDist] = await Promise.all([
-        payrollAPI.getAll(),
-        payrollAPI.getSummary(),
-        teamAPI.getDepartmentDistribution(),
-      ]);
-      setPayroll(payrollData);
-      setFilteredPayroll(payrollData);
-      setSummary(summaryData);
-      setDeptDistribution(deptDist);
-    } catch (error) {
-      console.error('Error fetching payroll data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+      const [teamData, payrollData] = await Promise.all([teamAPI.getAll(), payrollAPI.getAll()]);
+      setEmployees(teamData.filter(e => e.status === 'active'));
+      setPayrollRecords(payrollData);
+    } catch (error) { console.error("Error:", error); }
+    finally { setIsLoading(false); }
   };
 
-  const filterPayroll = () => {
-    let filtered = [...payroll];
+  useEffect(() => { loadData(); }, []);
 
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (p) =>
-          p.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.department.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  const processedList = useMemo(() => {
+    return employees.map(emp => {
+      const empRecords = payrollRecords.filter(p => p.employeeId === emp.id && p.month === selectedMonth);
+      const totalPaid = empRecords.filter(r => r.method !== 'reimbursement').reduce((sum, r) => sum + r.netSalary, 0);
+      const totalReimbursements = empRecords.filter(r => r.method === 'reimbursement').reduce((sum, r) => sum + r.netSalary, 0);
+      const totalDue = emp.salary + totalReimbursements;
+      const remaining = totalDue - totalPaid;
+      
+      let status: 'paid' | 'pending' | 'partial' = 'pending';
+      if (remaining <= 0) status = 'paid';
+      else if (totalPaid > 0) status = 'partial';
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((p) => p.status === statusFilter);
-    }
+      const today = new Date();
+      const cycleDay = emp.salaryStartDate ? new Date(emp.salaryStartDate).getDate() : 1;
+      const isCycleComplete = today.getDate() >= cycleDay; 
+      const mainRecord = empRecords.find(r => r.method !== 'reimbursement') || empRecords[0] || null;
 
-    if (deptFilter !== 'all') {
-      filtered = filtered.filter((p) => p.department === deptFilter);
-    }
+      return {
+        ...emp, payrollStatus: status, totalDue, totalPaid, remaining: Math.max(0, remaining),
+        lastPaidDate: mainRecord?.paidDate || null, isCycleComplete, record: mainRecord
+      };
+    }).filter(item => {
+      const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchStatus = statusFilter === 'all' || item.payrollStatus === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [employees, payrollRecords, selectedMonth, searchQuery, statusFilter]);
 
-    setFilteredPayroll(filtered);
+  const stats = useMemo(() => {
+    const totalDue = processedList.reduce((sum, p) => sum + p.totalDue, 0);
+    const totalPaid = processedList.reduce((sum, p) => sum + p.totalPaid, 0);
+    const paidCount = processedList.filter(p => p.payrollStatus === 'paid').length;
+    return { total: totalDue, paid: totalPaid, paidCount, pending: totalDue - totalPaid, pendingCount: processedList.length - paidCount, count: processedList.length };
+  }, [processedList]);
+
+  const handlePayClick = (employee: any) => {
+    setSelectedEmployee(employee);
+    setCurrentDueAmount(employee.remaining);
+    setModals({ ...modals, pay: true });
   };
 
-  const getStatusBadge = (status: 'paid' | 'unpaid') => {
-    return status === 'paid' ? (
-      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-        <CheckCircle2 className="w-3 h-3 mr-1" />
-        Paid
-      </Badge>
-    ) : (
-      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-        <XCircle className="w-3 h-3 mr-1" />
-        Unpaid
-      </Badge>
-    );
+  const handlePayment = async (data: any) => {
+    if (!selectedEmployee) return;
+    const newRecord: PayrollRecord = {
+      id: "temp", employeeId: selectedEmployee.id, employeeName: selectedEmployee.name, department: selectedEmployee.department,
+      mobile: selectedEmployee.phone, baseSalary: selectedEmployee.salary, bonuses: data.bonus, deductions: data.deduction,
+      tax: data.tax, netSalary: data.netSalary, status: 'paid', month: selectedMonth, paidDate: data.date,
+      method: data.type === 'reimbursement' ? 'reimbursement' : data.method, notes: data.notes
+    };
+    const saved = await payrollAPI.add(newRecord);
+    setPayrollRecords(prev => [saved, ...prev]);
+    setModals(prev => ({ ...prev, pay: false }));
   };
 
-  const departments: Department[] = [
-    'Graphic Designer',
-    'Web Developer',
-    'App Developer',
-    'Instructor',
-    'AI Engineer',
-  ];
+  const handleUpdateCycle = async () => {
+    if (!selectedEmployee) return;
+    try {
+      await teamAPI.update(selectedEmployee.id, { salary: cycleForm.salary, salaryStartDate: cycleForm.startDate });
+      setEmployees(prev => prev.map(e => e.id === selectedEmployee!.id ? { ...e, salary: cycleForm.salary, salaryStartDate: cycleForm.startDate } : e));
+      setModals(prev => ({ ...prev, editCycle: false }));
+    } catch(e) { console.error(e); }
+  };
+
+  const handleDeleteRecord = async (id: string) => {
+    await payrollAPI.delete(id);
+    setPayrollRecords(prev => prev.filter(r => r.id !== id));
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 pb-20 animate-in fade-in duration-500">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payroll Management</h1>
-          <p className="text-gray-500 mt-1">Manage employee salaries and payments</p>
+          <h1 className="text-xl font-bold text-gray-900">Payroll</h1>
+          <p className="text-xs text-gray-500 mt-0.5">Managing: <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{selectedMonth}</span></p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button className="bg-[#5d88c6] hover:bg-[#4a6fa5]">
-            Process Payroll
-          </Button>
+          <Button variant="outline" size="sm" onClick={loadData} className="h-8 w-8 p-0"><RefreshCw className="w-3.5 h-3.5" /></Button>
+          <Button variant="outline" className="h-8 text-xs bg-white"><Download className="w-3.5 h-3.5 mr-1.5" /> Export</Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#5d88c6]/10 flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-[#5d88c6]" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Payroll</p>
-              <p className="text-xl font-bold text-gray-900">
-                {formatCurrency(summary.totalAmount)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Paid</p>
-              <p className="text-xl font-bold text-green-600">
-                {formatCurrency(summary.totalPaid)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Pending</p>
-              <p className="text-xl font-bold text-yellow-600">
-                {formatCurrency(summary.totalUnpaid)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Employees</p>
-              <p className="text-xl font-bold text-gray-900">{payroll.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <PayrollStats stats={stats} />
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DepartmentDistributionChart data={deptDistribution} />
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Payroll Summary</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Total Base Salaries</span>
-                <span className="font-semibold">
-                  {formatCurrency(payroll.reduce((sum, p) => sum + p.baseSalary, 0))}
-                </span>
+      {/* Main Table Card */}
+      <Card className="border border-gray-100 shadow-sm overflow-hidden bg-white rounded-xl">
+        <div className="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row gap-3 items-center justify-between bg-white">
+           <div className="relative flex-1 w-full">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Input placeholder="Search employee..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs bg-gray-50 border-gray-200" />
+           </div>
+           <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative">
+                 <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                 <Input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="pl-8 w-[140px] h-8 text-xs bg-white" />
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Total Bonuses</span>
-                <span className="font-semibold text-green-600">
-                  {formatCurrency(payroll.reduce((sum, p) => sum + p.bonuses, 0))}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Total Deductions</span>
-                <span className="font-semibold text-red-600">
-                  {formatCurrency(payroll.reduce((sum, p) => sum + p.deductions + p.tax, 0))}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-[#5d88c6]/10 rounded-lg">
-                <span className="font-medium text-gray-900">Net Payroll</span>
-                <span className="font-bold text-[#5d88c6]">
-                  {formatCurrency(payroll.reduce((sum, p) => sum + p.netSalary, 0))}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search employees..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+              <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+                 <SelectTrigger className="w-[120px] h-8 text-xs bg-white"><SelectValue placeholder="Status" /></SelectTrigger>
+                 <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="paid">Paid</SelectItem><SelectItem value="pending">Pending</SelectItem></SelectContent>
+              </Select>
+           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'paid' | 'unpaid' | 'all')}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Select value={deptFilter} onValueChange={(v) => setDeptFilter(v as Department | 'all')}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Payroll Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+          <table className="w-full text-sm text-left">
+            <thead className="text-[11px] font-semibold text-gray-500 uppercase bg-slate-50/50 border-b border-gray-100">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Employee</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Department</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Base Salary</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Bonuses</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Deductions</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Tax</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Net Salary</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Status</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Paid Date</th>
+                <th className="px-6 py-3">Employee</th>
+                <th className="px-6 py-3 hidden md:table-cell">Contact</th>
+                <th className="px-6 py-3 text-right">Paid / Due</th>
+                <th className="px-6 py-3 text-center">Status</th>
+                <th className="px-6 py-3 text-center hidden sm:table-cell">Cycle</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5d88c6] mx-auto"></div>
-                  </td>
-                </tr>
-              ) : filteredPayroll.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                    No payroll records found
-                  </td>
-                </tr>
-              ) : (
-                filteredPayroll.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{record.employeeName}</p>
+            <tbody className="divide-y divide-gray-50">
+              {isLoading ? (<tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-xs">Loading...</td></tr>) 
+              : processedList.length === 0 ? (<tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-xs">No records found.</td></tr>) 
+              : (processedList.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 border border-gray-100">
+                          <AvatarImage src={item.avatar} />
+                          <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-[10px]">{getInitials(item.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-gray-900 text-xs">{item.name}</div>
+                          <div className="text-[10px] text-gray-500">{item.designation}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{record.department}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {formatCurrency(record.baseSalary)}
+                    <td className="px-6 py-3 hidden md:table-cell text-xs text-gray-500">
+                       <div>{item.phone || '-'}</div>
+                       <div className="opacity-75 text-[10px]">{item.department}</div>
                     </td>
-                    <td className="px-4 py-3 text-right text-green-600">
-                      +{formatCurrency(record.bonuses)}
+                    <td className="px-6 py-3 text-right">
+                      <div className="font-mono font-medium text-gray-900 text-xs">{formatCurrency(item.totalPaid)}</div>
+                      <div className="text-[10px] text-gray-400">of {formatCurrency(item.totalDue)}</div>
                     </td>
-                    <td className="px-4 py-3 text-right text-red-600">
-                      -{formatCurrency(record.deductions)}
+                    <td className="px-6 py-3 text-center">
+                      <Badge variant="secondary" className={cn("text-[10px] capitalize px-2 py-0 h-5 border", 
+                        item.payrollStatus === 'paid' ? "bg-emerald-50 border-emerald-100 text-emerald-700" : 
+                        item.payrollStatus === 'partial' ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-amber-50 border-amber-100 text-amber-700"
+                      )}>{item.payrollStatus}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-right text-red-600">
-                      -{formatCurrency(record.tax)}
+                    <td className="px-6 py-3 text-center text-[10px] text-gray-500 hidden sm:table-cell">
+                       Starts: {item.salaryStartDate ? new Date(item.salaryStartDate).getDate() : '1st'}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900">
-                      {formatCurrency(record.netSalary)}
-                    </td>
-                    <td className="px-4 py-3 text-center">{getStatusBadge(record.status)}</td>
-                    <td className="px-4 py-3 text-center text-sm text-gray-500">
-                      {record.paidDate ? (
-                        <span className="flex items-center justify-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {record.paidDate}
-                        </span>
-                      ) : (
-                        '-'
-                      )}
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-slate-700" onClick={() => { setSelectedEmployee(item); setCycleForm({ salary: item.salary, startDate: item.salaryStartDate || '' }); setModals({ ...modals, editCycle: true }); }}>
+                           <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        {item.payrollStatus !== 'paid' ? (
+                          <Button size="sm" className={cn("h-7 text-[10px] shadow-sm px-2", item.isCycleComplete ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-slate-600 text-white")} onClick={() => handlePayClick(item)}>Pay Now</Button>
+                        ) : (
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 bg-blue-50 hover:bg-blue-100" onClick={() => { if(item.record) { setSelectedRecord(item.record); setModals({ ...modals, payslip: true }); } }}>
+                             <FileText className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-gray-600" onClick={() => { setSelectedEmployee(item); setModals({ ...modals, history: true }); }}>
+                           <History className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -705,7 +614,21 @@ const Payroll: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
+
+      <PaymentModal isOpen={modals.pay} onClose={() => setModals(prev => ({ ...prev, pay: false }))} employee={selectedEmployee} currentBalance={currentDueAmount} onConfirm={handlePayment} />
+      <EmployeeLedger isOpen={modals.history} onClose={() => setModals(prev => ({ ...prev, history: false }))} employee={selectedEmployee} records={payrollRecords.filter(p => p.employeeId === selectedEmployee?.id)} onDelete={handleDeleteRecord} />
+      <PayslipModal isOpen={modals.payslip} onClose={() => setModals(prev => ({ ...prev, payslip: false }))} record={selectedRecord} />
+      
+      <Dialog open={modals.editCycle} onOpenChange={(v) => setModals(prev => ({ ...prev, editCycle: v }))}>
+         <DialogContent className="sm:max-w-sm"><DialogHeader><DialogTitle>Edit Salary Details</DialogTitle></DialogHeader>
+            <div className="space-y-4 py-2">
+               <div className="space-y-1.5"><Label>Base Salary</Label><Input type="number" value={cycleForm.salary} onChange={e => setCycleForm({...cycleForm, salary: Number(e.target.value)})} /></div>
+               <div className="space-y-1.5"><Label>Cycle Start Date</Label><Input type="date" value={cycleForm.startDate} onChange={e => setCycleForm({...cycleForm, startDate: e.target.value})} /></div>
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setModals(prev => ({ ...prev, editCycle: false }))}>Cancel</Button><Button onClick={handleUpdateCycle} className="bg-slate-900 text-white">Save Changes</Button></DialogFooter>
+         </DialogContent>
+      </Dialog>
     </div>
   );
 };
