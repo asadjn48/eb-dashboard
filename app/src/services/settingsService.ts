@@ -8,9 +8,8 @@ const SETTINGS_DOC_REF = doc(db, 'company', 'settings');
 const DEFAULT_SETTINGS: CompanySettings = {
     name: 'EncoderBytes',
     address: 'IT Park, Peshawar, Pakistan',
-    // phone: '+92-51-1234567',
-    // email: 'info@encoderbytes.com',
-    // primaryColor: '#5d88c6',
+    phone: '+92-51-1234567',
+    email: 'info@encoderbytes.com',
     currency: '',
     // taxPercentage: 0
 };
