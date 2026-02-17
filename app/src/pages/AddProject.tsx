@@ -42,7 +42,8 @@ const AddProject: React.FC = () => {
         profit: Number(formData.budget),
         progress: 0,
         status: 'active',
-        subType: formData.subType || 'General'
+        subType: formData.subType || 'General',
+        clientName: ''
       });
       navigate('/projects');
     } catch (error) {

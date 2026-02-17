@@ -173,7 +173,7 @@ const EditProject: React.FC = () => {
                 </CardContent>
             </Card>
 
-            <Button className="w-full bg-[var(--primary)] hover:opacity-90 text-white shadow-lg" size="lg" onClick={handleSave} disabled={isSaving}>
+            <Button className="w-full bg-primary hover:opacity-90 text-white shadow-lg" size="lg" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : <><Save className="w-4 h-4 mr-2"/> Save Changes</>}
             </Button>
         </div>

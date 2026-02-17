@@ -48,24 +48,24 @@
 // // ==========================================
 // // 3. PROJECTS
 // // ==========================================
-// export type ProjectType = 'funded' | 'commercial';
+export type ProjectType = 'funded' | 'commercial';
 // export type ProjectStatus = 'active' | 'completed' | 'on-hold' | 'cancelled';
 
-// export interface Project {
-//   id: string;
-//   name: string;
-//   type: ProjectType;
-//   subType: string;
-//   client: string;
-//   budget: number;
-//   expenses: number;
-//   profit: number;
-//   startDate: string;
-//   endDate: string;
-//   status: ProjectStatus;
-//   progress: number;
-//   description?: string;
-// }
+export interface Project {
+  id: string;
+  name: string;
+  type: ProjectType;
+  subType: string;
+  // client: string;
+  budget: number;
+  // expenses: number;
+  // profit: number;
+  startDate: string;
+  // endDate: string;
+  status: ProjectStatus;
+  progress: number;
+  description?: string;
+}
 
 // export interface ProjectFilters {
 //   type?: ProjectType;
@@ -470,6 +470,16 @@ export interface Project {
   // Support both naming conventions just in case
   clientName: string; 
   client?: string; 
+
+
+
+ 
+ 
+  
+
+  assignedTo?: string[]; 
+
+
   
   description?: string;
   status: ProjectStatus;
@@ -486,7 +496,7 @@ export interface Project {
   endDate?: string; // Fallback date field
 }
 
-// --- FIX: Add this Interface ---
+// --- 
 export interface ProjectFilters {
   status?: ProjectStatus;
   type?: string;

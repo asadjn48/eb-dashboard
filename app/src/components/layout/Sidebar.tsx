@@ -782,7 +782,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobileOpen =
       <aside
         className={cn(
           'fixed top-0 left-0 h-full bg-[#fcfcfc] border-r border-gray-100 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-50 flex flex-col',
-          // ADDED: overflow-x-hidden prevents the horizontal scrollbar during collapse animations
           'overflow-x-hidden',
           isCollapsed ? 'lg:w-[80px]' : 'lg:w-[260px]', 
           isMobileOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full lg:translate-x-0'
