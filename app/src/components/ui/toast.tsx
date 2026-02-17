@@ -1,8 +1,4 @@
-// BEFORE (The cause of error)
-// import React from 'react';
-// import { Check, AlertCircle, X } from 'lucide-react';
 
-// AFTER (Corrected)
 import { X } from 'lucide-react'; 
 import { cn } from '@/lib/utils';
 
