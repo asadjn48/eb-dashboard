@@ -7,7 +7,7 @@ import {
   updateDoc, 
   deleteDoc, // Added Import
   getDoc} from 'firebase/firestore';
-import type { Employee, TeamFilters, ChartDataPoint } from '../types';
+import type { Employee, TeamFilters, ChartDataPoint } from '@/types';
 
 export const teamAPI = {
   // 1. Get All Employees
