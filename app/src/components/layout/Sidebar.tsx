@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobileOpen =
               isCollapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
             )}>
               <span className="font-bold text-[15px] text-slate-900 leading-tight truncate">
-                {settings?.name || 'Nexus ERP'}
+                {settings?.name || 'EB ERP'}
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 Workspace
