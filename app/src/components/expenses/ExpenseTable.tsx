@@ -103,7 +103,7 @@ export const ExpenseTable = ({ data, type, isLoading, onEdit, onDelete }: Expens
 
                 {/* 6. Actions */}
                 <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-1 ">
                     {/* Only show Edit for Expenses currently, as Income edit is usually rare/simple */}
                     {type === 'expenses' && (
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-blue-600" onClick={() => onEdit(item)}>

@@ -37,7 +37,7 @@ const ITEMS_PER_PAGE = 10;
 // --- Helper: Stat Card ---
 const StatCard = ({ title, value, icon: Icon, colorClass, subtext }: any) => (
   <Card className="border-none shadow-sm bg-white p-5 flex flex-col justify-between h-full relative overflow-hidden group">
-    <div className="absolute right-0 top-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity">
+    <div className="absolute right-0 top-0 p-4 opacity-0 transition-opacity">
         <Icon className={cn("w-16 h-16", colorClass.replace("bg-", "text-"))} />
     </div>
     <div className="flex justify-between items-start relative z-10">
@@ -349,46 +349,51 @@ const Expenses: React.FC = () => {
         />
       </div>
 
-      {/* 4. ANALYTICS AREA */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* 4. ANALYTICS AREA */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 p-0 gap-6">
          {/* Distribution Chart */}
-         <Card className="lg:col-span-2 border-none shadow-sm flex flex-col h-[380px]">
-            <CardHeader className="pb-2 border-b border-gray-100">
-               <CardTitle className="text-sm font-semibold flex items-center gap-2">
+         <Card className="lg:col-span-2 flex flex-col min-h-[400px] p-0">
+            <CardHeader className="p-5 pb-0 border-b border-slate-100 bg-white">
+               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800">
                   <PieChart className="w-4 h-4 text-slate-500" /> Spending Distribution
                </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 flex-1">
+            
+            
+            <CardContent className="w-full flex-1 relative min-h-[350px] p-0">
+              
                {chartData.length > 0 ? (
-                  <ExpenseDistributionChart data={chartData} />
+                  <div className="absolute inset-0 ">
+                     <ExpenseDistributionChart data={chartData} />
+                  </div>
                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-400 text-sm">No expenses for this period.</div>
+                  <div className="h-full flex items-center justify-center text-slate-400 text-sm font-medium">No expenses for this period.</div>
                )}
             </CardContent>
          </Card>
 
          {/* Top Categories List */}
-         <Card className="border-none shadow-sm flex flex-col h-[380px] overflow-hidden">
-            <CardHeader className="pb-2 border-b border-gray-100 bg-white">
-                <CardTitle className="text-sm font-semibold">Top Categories</CardTitle>
+         <Card className="border-slate-200/60 shadow-sm flex flex-col h-[400px] overflow-hidden">
+            <CardHeader className="pb-2 border-b border-slate-100 bg-white">
+                <CardTitle className="text-sm font-semibold text-slate-800">Top Categories</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 overflow-y-auto flex-1 space-y-4">
+            <CardContent className="p-5 overflow-y-auto flex-1 space-y-5 no-scrollbar">
                {chartData.map((item, idx) => {
                   const percent = (item.value / periodStats.totalExp) * 100;
-                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500'];
+                  const colors = ['bg-[#5d88c6]', 'bg-[#10b981]', 'bg-[#f59e0b]', 'bg-[#ef4444]', 'bg-[#8b5cf6]'];
                   return (
-                     <div key={item.name} className="space-y-1">
-                        <div className="flex justify-between text-xs font-medium">
-                           <span className="text-slate-700">{item.name}</span>
+                     <div key={item.name} className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-bold">
+                           <span className="text-slate-600">{item.name}</span>
                            <span className="text-slate-900">{formatCurrency(item.value)}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                           <div className={cn("h-full rounded-full", colors[idx % colors.length] || 'bg-slate-500')} style={{ width: `${percent}%` }} />
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                           <div className={cn("h-full rounded-full transition-all duration-1000 ease-out", colors[idx % colors.length] || 'bg-slate-400')} style={{ width: `${percent}%` }} />
                         </div>
                      </div>
                   );
                })}
-               {chartData.length === 0 && <p className="text-center text-gray-400 text-xs py-10">No data available for this range.</p>}
+               {chartData.length === 0 && <p className="text-center text-slate-400 text-sm py-12 font-medium">No data available.</p>}
             </CardContent>
          </Card>
       </div>

@@ -8,13 +8,13 @@ import { formatCurrency, formatCompactNumber } from '@/utils/formatters';
 interface StatCardProps {
   title: string;
   value: number;
-  icon?: React.ElementType; // Made optional to fit dynamic usage
-  maxValue?: number; // Optional now
+  icon?: React.ElementType;
+  maxValue?: number; 
   variant?: 'default' | 'success' | 'warning' | 'danger';
   subtitle?: string;
   format?: 'currency' | 'number' | 'percentage';
   currency?: string;
-  // Added these to support the generic StatCard usage in Expenses
+  // support the generic StatCard usage in Expenses
   bg?: string;
   color?: string;
   border?: string;
