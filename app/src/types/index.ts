@@ -395,6 +395,8 @@ export interface TeamFilters {
 // 5. PAYROLL
 // ==========================================
 export interface PayrollRecord {
+  // createdAt: string;
+  createdAt: string;
   id: string;
   employeeId: string;
   employeeName: string;
