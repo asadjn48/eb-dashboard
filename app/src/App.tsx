@@ -11,7 +11,8 @@ import Expenses from '@/pages/Expenses';
 import Settings from '@/pages/Settings';
 import AddProject from './pages/AddProject';
 import EditProject from './pages/EditProject';
-import AddEmployee from './pages/AddEmployee';
+// import AddEmployee from './pages/AddEmployee';
+
 import EditEmployee from './pages/team/EditEmployee';
 import EmployeeProfile from './pages/team/EmployeeProfile';
 import Alumni from './pages/Alumni';
@@ -83,11 +84,25 @@ const AppRoutes: React.FC = () => {
         <Route path="projects/edit/:id" element={<EditProject />} />
 
         {/* Team Routes */}
-        <Route path="team" element={<Team />} />
+        {/* <Route path="team" element={<Team />} />
         <Route path="alumni" element={<Alumni />} />
+        
         <Route path="team/new" element={<AddEmployee />} />
         <Route path="team/profile/:id" element={<EmployeeProfile />} />
+        <Route path="team/edit/:id" element={<EditEmployee />} /> */}
+
+          {/* Team Routes */}
+        <Route path="team" element={<Team />} />
+        <Route path="alumni" element={<Alumni />} />
+        
+        {/* FIX: Now both "new" and "edit" use our smart EditEmployee component! */}
+        <Route path="team/new" element={<EditEmployee />} />
         <Route path="team/edit/:id" element={<EditEmployee />} />
+        
+        <Route path="team/profile/:id" element={<EmployeeProfile />} />
+
+
+
 
         <Route path="payroll" element={<Payroll />} />
         <Route path="expenses" element={<Expenses />} />
