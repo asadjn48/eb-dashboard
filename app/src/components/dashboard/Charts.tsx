@@ -1,4 +1,4 @@
-/* eslint-disable prefer-const */
+
 // /* eslint-disable react-hooks/static-components */
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 // import React from 'react';
@@ -428,28 +428,40 @@ const GlassTooltip = ({ children }: { children: React.ReactNode }) => (
 );
 
 // --- Shared Unified Filter Header ---
+// --- Shared Unified Filter Header ---
 const ChartHeader = ({ title, startDate, endDate, setStartDate, setEndDate, extraFilter }: any) => (
-  <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-4 shrink-0">
-    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">{title}</CardTitle>
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+  <CardHeader className="flex flex-row items-center justify-between pb-3 gap-4 shrink-0 overflow-hidden">
+    
+    {/* Title - Truncates if it gets too squeezed */}
+    <CardTitle className="text-sm font-bold text-slate-800 tracking-tight shrink-0 truncate">
+      {title}
+    </CardTitle>
+    
+    {/* Controls Wrapper - Stays in 1 row, scrolls horizontally if cramped */}
+    <div className="flex items-center justify-end gap-2 overflow-x-auto no-scrollbar flex-1 min-w-0">
+      
+      {/* Ultra-compact Date Picker */}
+      <div className="flex items-center bg-slate-50 p-0.5 px-1.5 rounded-md border border-slate-200 shrink-0">
         <Input 
-          type="month" // "month" is much better UX for financial tracking than selecting specific days
+          type="date" 
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="h-7 w-[120px] text-xs bg-transparent border-0 focus-visible:ring-0 shadow-none" 
-          title="Start Month"
+          className="h-6 w-[95px] text-[10px] font-medium bg-transparent border-0 focus-visible:ring-0 shadow-none px-0 cursor-pointer text-slate-600" 
+          title="Start Date"
         />
-        <span className="text-slate-400 text-xs font-semibold px-1">to</span>
+        <span className="text-slate-300 text-[9px] font-bold px-1 uppercase tracking-wider">to</span>
         <Input 
-          type="month" 
+          type="date" 
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="h-7 w-[120px] text-xs bg-transparent border-0 focus-visible:ring-0 shadow-none" 
-          title="End Month"
+          className="h-6 w-[95px] text-[10px] font-medium bg-transparent border-0 focus-visible:ring-0 shadow-none px-0 cursor-pointer text-slate-600" 
+          title="End Date"
         />
       </div>
-      {extraFilter && extraFilter}
+      
+      {/* Extra Filters (like Top 5 Dropdown) */}
+      {extraFilter && <div className="shrink-0">{extraFilter}</div>}
+    
     </div>
   </CardHeader>
 );
@@ -530,7 +542,7 @@ interface ExpenseDistributionChartProps { data: ChartDataPoint[]; }
 export const ExpenseDistributionChart: React.FC<ExpenseDistributionChartProps> = ({ data }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [limit, setLimit] = useState('5');
+  const [limit] = useState('5');
 
   const filteredData = useMemo(() => {
     // 1. Filter by Date (Requires parent to pass `date` or `month` field inside ChartDataPoint)
@@ -573,18 +585,18 @@ export const ExpenseDistributionChart: React.FC<ExpenseDistributionChartProps> =
   const totalValue = filteredData.reduce((sum, d) => sum + d.value, 0);
   const dataWithTotal = filteredData.map(item => ({ ...item, total: totalValue }));
 
-  const limitSelect = (
-    <Select value={limit} onValueChange={setLimit}>
-      <SelectTrigger className="h-9 w-[100px] text-xs bg-white border-slate-200 rounded-lg shadow-sm">
-        <SelectValue placeholder="Show" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="5">Top 5</SelectItem>
-        <SelectItem value="8">Top 8</SelectItem>
-        <SelectItem value="all">All</SelectItem>
-      </SelectContent>
-    </Select>
-  );
+  // const limitSelect = (
+  //   <Select value={limit} onValueChange={setLimit}>
+  //     <SelectTrigger className="h-9 w-[100px] text-xs bg-white border-slate-200 rounded-lg shadow-sm">
+  //       <SelectValue placeholder="Show" />
+  //     </SelectTrigger>
+  //     <SelectContent>
+  //       <SelectItem value="5">Top 5</SelectItem>
+  //       <SelectItem value="8">Top 8</SelectItem>
+  //       <SelectItem value="all">All</SelectItem>
+  //     </SelectContent>
+  //   </Select>
+  // );
 
   return (
     <Card className="h-full shadow-sm border-slate-200/60 bg-white hover:shadow-md transition-shadow flex flex-col">
@@ -592,7 +604,7 @@ export const ExpenseDistributionChart: React.FC<ExpenseDistributionChartProps> =
         title="Categories" 
         startDate={startDate} endDate={endDate} 
         setStartDate={setStartDate} setEndDate={setEndDate}
-        extraFilter={limitSelect}
+        // extraFilter={limitSelect}
       />
       <CardContent className="flex-1 min-h-0 pb-2">
         {filteredData.length === 0 ? (

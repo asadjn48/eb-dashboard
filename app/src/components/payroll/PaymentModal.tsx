@@ -199,7 +199,6 @@
 
 
 
-/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
@@ -270,22 +269,28 @@ export const PaymentModal = ({ isOpen, onClose, employee, onConfirm, currentBala
 
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !isProcessing && onClose(val)}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
-        <DialogHeader className="px-6 py-4 bg-slate-900 border-b flex flex-row items-center justify-between">
+      {/* FIXED: Changed sm:max-w-md to md:max-w-2xl (wider). 
+        Added max-h-[90vh] to ensure it never exceeds the screen height 
+      */}
+      <DialogContent className="w-[95vw] md:max-w-2xl max-h-[99vh] overflow-y-auto p-0 border-0 shadow-2xl rounded-2xl ">
+        
+        {/* Header */}
+        <DialogHeader className="px-6 py-4 bg-slate-900 border-b flex flex-row items-center justify-between sticky top-0 z-10">
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-white">
              <Wallet className="w-5 h-5 text-emerald-400" /> Record Transaction
           </DialogTitle>
-          <Button variant="ghost" size="icon" onClick={() => onClose(false)} disabled={isProcessing} className="text-white hover:bg-white/20 h-8 w-8 rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => onClose(false)} disabled={isProcessing} className="text-white hover:bg-white/20 h-8 w-8 rounded-full shrink-0">
             <X className="w-4 h-4" />
           </Button>
         </DialogHeader>
         
-        <div className="p-6 space-y-5 bg-white">
+        <div className="p-6 space-y-6 bg-white">
            
-           <div className={cn("p-4 rounded-xl border flex justify-between items-center", currentBalance > 0 ? "bg-rose-50 border-rose-100" : "bg-emerald-50 border-emerald-100")}>
+           {/* Employee & Balance Banner */}
+           <div className={cn("p-3 rounded-xl border flex justify-between items-center shadow-sm", currentBalance > 0 ? "bg-rose-50 border-rose-100" : "bg-emerald-50 border-emerald-100")}>
               <div>
-                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">To Employee</p>
-                 <p className="font-bold text-slate-900">{employee.name}</p>
+                 <p className="text-[8px] font-extrabold uppercase tracking-wider text-slate-500">To Employee</p>
+                 <p className="font-bold text-slate-900 text-lg">{employee.name}</p>
               </div>
               <div className="text-right">
                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Current Arrears</p>
@@ -295,55 +300,65 @@ export const PaymentModal = ({ isOpen, onClose, employee, onConfirm, currentBala
               </div>
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
+          
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              
+              {/* Type Selection - 1 Column */}
+              <div className="space-y-1">
                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Transaction Type</Label>
                  <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
-                    <SelectTrigger className="h-10 bg-slate-50 border-slate-200 font-medium focus:ring-[#5d88c6]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 font-medium focus:ring-[#5d88c6]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                        <SelectItem value="salary">Salary Payment</SelectItem>
                        <SelectItem value="advance">Advance / Loan</SelectItem>
                        <SelectItem value="reimbursement">Reimbursement (Add to Due)</SelectItem>
                     </SelectContent>
                  </Select>
-                 {form.type === 'reimbursement' && <p className="text-[10px] text-blue-600 flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/> This adds to the arrears owed to the employee.</p>}
+                 {form.type === 'reimbursement' && <p className="text-[10px] text-blue-600 flex items-center mt-1.5"><AlertCircle className="w-3 h-3 mr-1"/> Adds to the arrears owed to the employee.</p>}
               </div>
 
-              <div className="col-span-2 space-y-1.5">
+              {/* Amount - 1 Column */}
+              <div className="space-y-1">
                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Base Amount (PKR)</Label>
                  <Input type="number" className="h-11 font-mono font-bold text-lg bg-slate-50 border-slate-200 focus-visible:ring-[#5d88c6]" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0.00" />
               </div>
 
+              {/* Bonus & Deduction side-by-side if it's a salary payment */}
               {form.type === 'salary' && (
                 <>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                      <Label className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Bonus (+)</Label>
-                     <Input type="number" className="h-9 font-mono bg-emerald-50/30 border-emerald-100 focus-visible:ring-emerald-400" value={form.bonus} onChange={e => setForm({...form, bonus: Number(e.target.value)})} />
+                     <Input type="number" className="h-10 font-mono font-semibold bg-emerald-50/30 border-emerald-100 focus-visible:ring-emerald-400" value={form.bonus} onChange={e => setForm({...form, bonus: Number(e.target.value)})} />
                   </div>
                   <div className="space-y-1.5">
                      <Label className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Deductions (-)</Label>
-                     <Input type="number" className="h-9 font-mono bg-rose-50/30 border-rose-100 focus-visible:ring-rose-400" value={form.deduction} onChange={e => setForm({...form, deduction: Number(e.target.value)})} />
+                     <Input type="number" className="h-10 font-mono font-semibold bg-rose-50/30 border-rose-100 focus-visible:ring-rose-400" value={form.deduction} onChange={e => setForm({...form, deduction: Number(e.target.value)})} />
                   </div>
                 </>
               )}
 
-              <div className="col-span-2 space-y-1.5">
-                 <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Notes</Label>
-                 <Textarea placeholder="E.g., January Final Settlement..." className="resize-none h-16 bg-slate-50 border-slate-200 focus-visible:ring-[#5d88c6]" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+              {/* Notes - Spans 2 Columns to stay wide and short */}
+              <div className="sm:col-span-2 space-y-1.5">
+                 <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Notes & Description</Label>
+                 <Textarea placeholder="E.g., Final settlement for this month..." className="resize-none h-16 bg-slate-50 border-slate-200 focus-visible:ring-[#5d88c6]" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
               </div>
            </div>
            
-           <div className="flex justify-between items-center bg-slate-900 p-4 rounded-xl text-white mt-2">
+           {/* Final Calculation Banner */}
+           <div className="flex justify-between items-center bg-slate-900 p-4 rounded-xl text-white shadow-inner">
                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Final Processing Amount</span>
                <span className="font-mono font-extrabold text-2xl tracking-tight">{formatCurrency(netAmount)}</span>
            </div>
         </div>
 
-        <DialogFooter className="px-6 py-4 bg-slate-50 border-t">
-           <Button variant="outline" className="rounded-full font-bold px-6 h-10" onClick={() => onClose(false)} disabled={isProcessing}>Cancel</Button>
-           <Button className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-full font-bold px-8 h-10 shadow-md transition-transform active:scale-95" onClick={handleSubmit} disabled={isProcessing}>
-             {isProcessing ? 'Processing...' : 'Confirm Payment'}
-           </Button>
+        {/* Footer */}
+        <DialogFooter className="px-6 py-4 bg-slate-50 border-t sticky bottom-0">
+           <div className="flex w-full justify-end gap-3">
+             <Button variant="outline" className="rounded-full font-bold px-6 h-10 bg-white" onClick={() => onClose(false)} disabled={isProcessing}>Cancel</Button>
+             <Button className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-full font-bold px-8 h-10 shadow-md transition-transform active:scale-95" onClick={handleSubmit} disabled={isProcessing}>
+               {isProcessing ? 'Processing...' : 'Confirm Transaction'}
+             </Button>
+           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
