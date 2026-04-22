@@ -144,7 +144,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
 
               <div className="space-y-1.5">
                  <Label className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Total Budget (PKR) *</Label>
-                 <Input required type="number" placeholder="0.00" value={formData.budget || ''} onChange={e => setFormData({...formData, budget: e.target.value})} className="h-10 bg-emerald-50/30 border-emerald-100 focus-visible:ring-emerald-500 font-mono font-bold text-lg" />
+                 <Input required type="number" placeholder="0.00" value={formData.budget || ''} onChange={e => setFormData({...formData, budget: Number(e.target.value)})} className="h-10 bg-emerald-50/30 border-emerald-100 focus-visible:ring-emerald-500 font-mono font-bold text-lg" />
               </div>
 
               <div className="grid grid-cols-2 gap-3 sm:col-span-2">
