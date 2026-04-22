@@ -22,6 +22,8 @@ interface SidebarProps {
 const MENU_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderKanban },
+  { path: '/income', label: 'Income', icon: Building2 },
+  { path: '/net-profit', label: 'Net Profit', icon: Building2 },
   { path: '/team', label: 'Team', icon: Users },
   { path: '/payroll', label: 'Payroll', icon: Wallet },
   { path: '/expenses', label: 'Expenses', icon: Receipt },

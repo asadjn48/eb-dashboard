@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/context/AuthContext'; // Ensure imports are correct
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
@@ -9,7 +9,8 @@ import Team from '@/pages/Team';
 import Payroll from '@/pages/Payroll';
 import Expenses from '@/pages/Expenses';
 import Settings from '@/pages/Settings';
-import AddProject from './pages/AddProject';
+// import AddProject from './pages/AddProject';
+<Route path="projects" element={<Projects />} />
 import EditProject from './pages/EditProject';
 // import AddEmployee from './pages/AddEmployee';
 
@@ -18,6 +19,8 @@ import EmployeeProfile from './pages/team/EmployeeProfile';
 import Alumni from './pages/Alumni';
 import Notes from '@/pages/Notes';
 import { Toaster } from './components/ui/toaster';
+import Income from './pages/Income';
+import NetProfit from './pages/NetProfit';
 
 // Protected Route wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,9 +82,14 @@ const AppRoutes: React.FC = () => {
         <Route path="dashboard" element={<Dashboard />} />
         
         {/* Project Routes */}
-        <Route path="projects" element={<Projects />} />
-        <Route path="projects/new" element={<AddProject />} />
+<Route path="projects" element={<Projects />} />        
+        <Route path="projects/new" element={<EditProject />} />
         <Route path="projects/edit/:id" element={<EditProject />} />
+
+        <Route path="income" element={<Income />} />
+
+
+        <Route path="net-profit" element={<NetProfit />} />
 
         {/* Team Routes */}
         {/* <Route path="team" element={<Team />} />
@@ -100,7 +108,6 @@ const AppRoutes: React.FC = () => {
         <Route path="team/edit/:id" element={<EditEmployee />} />
         
         <Route path="team/profile/:id" element={<EmployeeProfile />} />
-
 
 
 
